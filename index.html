@@ -132,8 +132,10 @@ body::before {
 @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── SEARCH ── */
-.search-wrap { display: flex; gap: 10px; margin-bottom: 16px; }
-.search-input-wrap { flex: 1; position: relative; }
+/* High z-index so the suggestions sit above the weather cards (which the
+   global `* { z-index:1 }` rule would otherwise paint on top of, eating taps). */
+.search-wrap { display: flex; gap: 10px; margin-bottom: 16px; z-index: 1000; }
+.search-input-wrap { flex: 1; position: relative; z-index: 1000; }
 .search-input-wrap input {
   width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
   padding: 13px 14px 13px 42px; color: var(--text);
