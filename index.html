@@ -294,10 +294,6 @@ td.rain-c { color: var(--accent3); }
 
 <div class="wrapper">
 
-  <div class="notice">
-    ⚠️ Must be <strong>hosted online</strong> to work — upload to <strong>netlify.com/drop</strong> or Cloudflare Pages first.
-  </div>
-
   <!-- SEARCH -->
   <div class="search-wrap">
     <div class="search-input-wrap">
@@ -342,7 +338,7 @@ td.rain-c { color: var(--accent3); }
       </div>
       <div class="stat-row"><span class="label">Humidity</span><span class="value accent3" id="sHum"></span></div>
       <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
-      <div class="stat-row hidden" id="rowRain"><span class="label">Rain Chance</span><span class="value accent3" id="sRain"></span></div>
+      <div class="stat-row hidden" id="rowRain"><span class="label">Rain Chance (now)</span><span class="value accent3" id="sRain"></span></div>
       <div class="stat-row"><span class="label">UV Index</span><span class="value accent2" id="sUV"></span></div>
     </div>
 
@@ -362,11 +358,9 @@ td.rain-c { color: var(--accent3); }
     <!-- HISTORICAL (same date, previous years) -->
     <div class="card" style="animation-delay:0.2s">
       <div class="card-title accent2">This Day in Previous Years</div>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;letter-spacing:0.04em;">Compare the same date across past years.</p>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:14px;letter-spacing:0.04em;">The same date over the last 5 years.</p>
       <div class="hist-controls">
         <div class="hc-field"><label>Date</label><input type="date" id="histDate"></div>
-        <div class="hc-field"><label>From year</label><select id="histFrom"></select></div>
-        <div class="hc-field"><label>To year</label><select id="histTo"></select></div>
         <button class="btn-compare" onclick="fetchHistorical()">Compare →</button>
       </div>
       <div class="loading hidden" id="histLoading"><div class="spinner"></div> Loading…</div>
@@ -411,7 +405,13 @@ const WC={0:{i:'☀️',d:'Clear sky'},1:{i:'🌤️',d:'Mainly clear'},2:{i:'�
   77:{i:'🌨️',d:'Snow grains'},80:{i:'🌦️',d:'Rain showers'},81:{i:'🌧️',d:'Showers'},
   82:{i:'⛈️',d:'Heavy showers'},85:{i:'🌨️',d:'Snow showers'},86:{i:'❄️',d:'Heavy snow showers'},
   95:{i:'⛈️',d:'Thunderstorm'},96:{i:'⛈️',d:'Thunderstorm+hail'},99:{i:'⛈️',d:'Thunderstorm+heavy hail'}};
-const wc = c => WC[c] || {i:'🌡️',d:'Unknown'};
+// Night icon overrides for clear / mainly clear / partly cloudy
+const NIGHT={0:'🌙',1:'🌙',2:'☁️'};
+// isDay: 1 = day, 0 = night, undefined = treat as day (used by daily/historical views)
+const wc = (c, isDay) => {
+  const base = WC[c] || {i:'🌡️',d:'Unknown'};
+  return (isDay===0 && NIGHT[c]!==undefined) ? {i:NIGHT[c], d:base.d} : base;
+};
 const T  = c => (c==null?'—':Math.round(c) + '°C');
 const W  = k => (k==null?'—':Math.round(k) + ' km/h');
 const fmtTime = iso => { if(!iso) return '—'; const d=new Date(iso); return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); };
@@ -560,8 +560,8 @@ async function loadWeather(lat, lon, label) {
   currentLat=lat; currentLon=lon;
   const url = 'https://api.open-meteo.com/v1/forecast'
     + '?latitude='+lat+'&longitude='+lon
-    + '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,uv_index'
-    + '&hourly=temperature_2m,weather_code,precipitation_probability'
+    + '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,uv_index,is_day'
+    + '&hourly=temperature_2m,weather_code,precipitation_probability,is_day'
     + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset'
     + '&timezone=auto&forecast_days=7&models=best_match';
   try {
@@ -574,10 +574,11 @@ async function loadWeather(lat, lon, label) {
     renderWeather(d);
     setupHistorical();
     setupMonth();
+    fetchHistorical();   // auto-show the last 5 years for today
   } catch(e) {
     let msg='Could not load weather data.', hint='';
     if (e.name==='AbortError') hint='Request timed out. Check your connection.';
-    else if (e.message.includes('fetch')||e.message.includes('Load failed')||e.message.includes('NetworkError')) { msg='Network request blocked.'; hint='Upload to Netlify or Cloudflare Pages first — browsers block API calls from local files.'; }
+    else if (e.message.includes('fetch')||e.message.includes('Load failed')||e.message.includes('NetworkError')) { msg='Network request failed.'; hint='Check your internet connection and try again.'; }
     else hint=e.message;
     showError(msg, hint);
   }
@@ -595,9 +596,19 @@ function renderWeather(d) {
 
   const cur = d.current;
   const day0 = {hi:d.daily.temperature_2m_max[0],lo:d.daily.temperature_2m_min[0],rain:d.daily.precipitation_probability_max[0],wind:d.daily.wind_speed_10m_max[0],uv:d.daily.uv_index_max[0]};
-  document.getElementById('todayIcon').textContent = wc(cur.weather_code).i;
+
+  // Locate the location's *current* hour in the hourly arrays (timezone-safe)
+  const times=d.hourly.time;
+  const nowKey = (cur.time || '').slice(0,13);                 // e.g. "2026-06-05T14"
+  let start = times.findIndex(t => t.slice(0,13) === nowKey);
+  if (start < 0) start = times.findIndex(t => cur.time && t >= cur.time);
+  if (start < 0) start = 0;
+  // Current-hour precipitation probability — matches phone-style "rain now"
+  const nowProb = d.hourly.precipitation_probability[start];
+
+  document.getElementById('todayIcon').textContent = wc(cur.weather_code, cur.is_day).i;
   document.getElementById('todayTemp').textContent = T(cur.temperature_2m);
-  document.getElementById('todayDesc').textContent = wc(cur.weather_code).d;
+  document.getElementById('todayDesc').textContent = wc(cur.weather_code, cur.is_day).d;
   document.getElementById('todayHi').textContent   = T(day0.hi);
   document.getElementById('todayLo').textContent   = T(day0.lo);
   document.getElementById('sHum').textContent  = cur.relative_humidity_2m + '%';
@@ -613,22 +624,17 @@ function renderWeather(d) {
     document.getElementById('todayLocal').textContent = '';
   }
 
-  // Rain Chance — only show the row when rain is actually expected today
+  // Rain Chance (now) — current-hour probability, shown only if rain is plausible
   const rowRain = document.getElementById('rowRain');
-  if (isWet(d.daily.weather_code[0], day0.rain)) {
-    document.getElementById('sRain').textContent = (day0.rain ?? 0) + '%';
+  if (isWet(cur.weather_code, nowProb)) {
+    document.getElementById('sRain').textContent = (nowProb ?? 0) + '%';
     rowRain.classList.remove('hidden');
   } else {
     rowRain.classList.add('hidden');
   }
 
-  // HOURLY — next 24h starting from the location's *current* hour (not the browser's)
+  // HOURLY — next 24h starting from the location's current hour (not the browser's)
   const scroll=document.getElementById('hourlyScroll'); scroll.innerHTML='';
-  const times=d.hourly.time;
-  const nowKey = (cur.time || '').slice(0,13);                 // e.g. "2026-06-05T14"
-  let start = times.findIndex(t => t.slice(0,13) === nowKey);
-  if (start < 0) start = times.findIndex(t => cur.time && t >= cur.time);
-  if (start < 0) start = 0;
   for (let k=0; k<24 && (start+k)<times.length; k++) {
     const i = start+k;
     const isNow = (k===0);
@@ -637,7 +643,7 @@ function renderWeather(d) {
     const code = d.hourly.weather_code[i];
     const el=document.createElement('div'); el.className='hour-card'+(isNow?' now':'');
     el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}</div>
-      <div class="h-icon">${wc(code).i}</div>
+      <div class="h-icon">${wc(code, d.hourly.is_day[i]).i}</div>
       <div class="h-temp">${T(d.hourly.temperature_2m[i])}</div>
       <div class="h-rain">${isWet(code,prob)?'💧'+prob+'%':''}</div>`;
     scroll.appendChild(el);
@@ -682,30 +688,23 @@ function renderWeather(d) {
   });
 }
 
-// ── HISTORICAL (same date, previous years) ───────────────────────
+// ── HISTORICAL (same date, last 5 years) ─────────────────────────
 function setupHistorical() {
   const today=new Date();
   const di=document.getElementById('histDate');
-  di.value=today.toISOString().slice(0,10); di.max=today.toISOString().slice(0,10);
-  const fromSel=document.getElementById('histFrom'), toSel=document.getElementById('histTo');
-  if (fromSel.options.length>0) return;
-  const yr=today.getFullYear();
-  for (let y=yr-1;y>=1940;y--) {
-    fromSel.innerHTML+=`<option value="${y}"${y===yr-10?'selected':''}>${y}</option>`;
-    toSel.innerHTML+=`<option value="${y}"${y===yr-1?'selected':''}>${y}</option>`;
-  }
+  if (!di.value) di.value=today.toISOString().slice(0,10);
+  di.max=today.toISOString().slice(0,10);
 }
 async function fetchHistorical() {
   if (!currentLat) return;
   const dateVal=document.getElementById('histDate').value; if (!dateVal) return;
-  const fromY=parseInt(document.getElementById('histFrom').value);
-  const toY=parseInt(document.getElementById('histTo').value);
-  if (fromY>toY) { document.getElementById('histError').innerHTML='"From" must be ≤ "To".'; document.getElementById('histError').classList.remove('hidden'); return; }
   document.getElementById('histError').classList.add('hidden');
   document.getElementById('histResults').classList.add('hidden');
   document.getElementById('histLoading').classList.remove('hidden');
-  const[,mm,dd]=dateVal.split('-');
-  const years=[]; for(let y=toY;y>=fromY;y--)years.push(y);
+  const[yy,mm,dd]=dateVal.split('-');
+  // Dynamically the 5 years before the chosen date's year (rolls forward each year)
+  const selYear=parseInt(yy);
+  const years=[]; for(let y=selYear-1;y>=selYear-5;y--)years.push(y);
   const rows=[];
   for (let i=0;i<years.length;i+=5) {
     await Promise.all(years.slice(i,i+5).map(async y=>{
@@ -720,7 +719,7 @@ async function fetchHistorical() {
     }));
   }
   document.getElementById('histLoading').classList.add('hidden');
-  if (!rows.length) { document.getElementById('histError').innerHTML='No data found. Make sure the app is hosted online.'; document.getElementById('histError').classList.remove('hidden'); return; }
+  if (!rows.length) { document.getElementById('histError').innerHTML='No historical data found for that date.'; document.getElementById('histError').classList.remove('hidden'); return; }
   rows.sort((a,b)=>b.year-a.year);
   let html=`<thead><tr><th>Year</th><th style="text-align:left">Condition</th><th>High</th><th>Low</th><th>Rain mm</th><th>Wind</th></tr></thead><tbody>`;
   rows.forEach(r=>{html+=`<tr><td>${r.year}</td><td style="text-align:left">${wc(r.code).i} ${wc(r.code).d}</td><td class="hi-c">${T(r.hi)}</td><td class="lo-c">${T(r.lo)}</td><td class="rain-c">${r.rain!=null?r.rain.toFixed(1):'—'}</td><td>${W(r.wind)}</td></tr>`;});
@@ -770,7 +769,7 @@ async function fetchMonth() {
     renderMonth(d, year, month, lastDay);
   } catch(e) {
     document.getElementById('moLoading').classList.add('hidden');
-    errEl.textContent = e.name==='AbortError' ? 'Request timed out.' : 'Could not load month data. Make sure the app is hosted online.';
+    errEl.textContent = e.name==='AbortError' ? 'Request timed out.' : 'Could not load month data. Please try again.';
     errEl.classList.remove('hidden');
   }
 }
