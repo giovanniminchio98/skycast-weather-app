@@ -498,6 +498,22 @@ cityInput.addEventListener('keydown', e => {
 });
 document.addEventListener('click', e => { if (!e.target.closest('.search-input-wrap')) hideAc(); });
 document.getElementById('searchBtn').addEventListener('click', () => { hideAc(); doSearch(); });
+// Select a suggestion on pointerdown so the tap isn't lost to input-blur /
+// the iOS keyboard dismiss (the reason taps "did nothing" before).
+acList.addEventListener('pointerdown', e => {
+  const item = e.target.closest('.ac-item');
+  if (!item) return;
+  e.preventDefault();
+  const r = acResults[parseInt(item.dataset.idx, 10)];
+  if (r) pickResult(r);
+});
+// Keep hover-highlight in sync when navigating with the mouse
+acList.addEventListener('mousemove', e => {
+  const item = e.target.closest('.ac-item');
+  if (!item) return;
+  acFocused = parseInt(item.dataset.idx, 10);
+  acList.querySelectorAll('.ac-item').forEach((el,i)=>el.classList.toggle('focused', i===acFocused));
+});
 
 function hideAc() { acList.classList.add('hidden'); acList.innerHTML=''; acFocused=-1; }
 
@@ -506,13 +522,12 @@ async function doAcSearch(q) {
   acResults = results;
   if (!results.length) { acList.innerHTML='<div class="ac-loading">No results found.</div>'; return; }
   acList.innerHTML = '';
-  results.forEach(r => {
+  results.forEach((r, idx) => {
     const div = document.createElement('div');
     div.className = 'ac-item';
+    div.dataset.idx = idx;
     const region = [r.admin1, r.country].filter(Boolean).join(', ');
     div.innerHTML = `<div class="ac-city">${r.name}</div><div class="ac-region">${region}</div>`;
-    div.addEventListener('mousedown', e => e.preventDefault());
-    div.addEventListener('click', () => pickResult(r));
     acList.appendChild(div);
   });
   acList.classList.remove('hidden');
