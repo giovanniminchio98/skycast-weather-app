@@ -192,6 +192,7 @@ body::before {
 .hour-card { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: center; min-width: 60px; transition: border-color 0.2s; }
 .hour-card.now { border-color: var(--accent); box-shadow: 0 0 14px -4px var(--accent); }
 .h-time { font-size: 10px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; }
+.h-moon { font-size: 9px; }
 .hour-card.now .h-time { color: var(--accent); }
 .h-icon { font-size: 1.4rem; margin-bottom: 5px; }
 .h-temp { font-size: 12px; font-weight: 500; }
@@ -437,8 +438,9 @@ const WC={0:{i:'☀️',d:'Clear sky'},1:{i:'🌤️',d:'Mainly clear'},2:{i:'�
   77:{i:'🌨️',d:'Snow grains'},80:{i:'🌦️',d:'Rain showers'},81:{i:'🌧️',d:'Showers'},
   82:{i:'⛈️',d:'Heavy showers'},85:{i:'🌨️',d:'Snow showers'},86:{i:'❄️',d:'Heavy snow showers'},
   95:{i:'⛈️',d:'Thunderstorm'},96:{i:'⛈️',d:'Thunderstorm+hail'},99:{i:'⛈️',d:'Thunderstorm+heavy hail'}};
-// Night icon overrides for clear / mainly clear / partly cloudy
-const NIGHT={0:'🌙',1:'🌙',2:'☁️'};
+// Night icon overrides — replace sun-bearing icons (clear, partly cloudy and
+// the sun+rain drizzle/shower codes) with moon / plain-cloud versions at night.
+const NIGHT={0:'🌙',1:'🌙',2:'☁️',51:'🌧️',53:'🌧️',80:'🌧️'};
 // isDay: 1 = day, 0 = night, undefined = treat as day (used by daily/historical views)
 const wc = (c, isDay) => {
   const base = WC[c] || {i:'🌡️',d:'Unknown'};
@@ -731,8 +733,9 @@ function renderWeather(d) {
     const h = new Date(times[i]).getHours();
     const prob = d.hourly.precipitation_probability[i];
     const code = d.hourly.weather_code[i];
+    const night = d.hourly.is_day[i]===0;   // after sunset / before sunrise
     const el=document.createElement('div'); el.className='hour-card'+(isNow?' now':'');
-    el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}</div>
+    el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}${night?' <span class="h-moon">🌙</span>':''}</div>
       <div class="h-icon">${wc(code, d.hourly.is_day[i]).i}</div>
       <div class="h-temp">${T(d.hourly.temperature_2m[i])}</div>
       <div class="h-rain">${isWet(code)?'🌧️'+prob+'%':''}</div>`;
