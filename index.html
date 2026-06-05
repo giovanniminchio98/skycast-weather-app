@@ -540,17 +540,22 @@ function startNeural(){ if(neuralRAF) return; if(!canvas) initNeural(); resizeNe
 function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF=null; ctx&&ctx.clearRect(0,0,canvas.width,canvas.height); } }
 
 // ── AUTOCOMPLETE ─────────────────────────────────────────────────
+// First edit after a city was selected: wipe the old name regardless of caret
+// position (reliable on iOS) and keep only what was just typed/pasted.
+cityInput.addEventListener('beforeinput', e => {
+  if (!committedCity) return;
+  committedCity = false; committedLabel = '';
+  if (e.inputType && e.inputType.indexOf('insert') === 0 && e.data != null) {
+    e.preventDefault();
+    cityInput.value = e.data;
+    cityInput.dispatchEvent(new Event('input'));
+  } else {
+    cityInput.value = '';   // backspace etc. on a committed city → start empty
+  }
+});
 cityInput.addEventListener('input', () => {
   clearTimeout(acTimer);
   acFocused = -1;
-  // First edit after a city was selected: clear the old name, keep only what was just typed.
-  if (committedCity) {
-    committedCity = false;
-    const v = cityInput.value;
-    if (committedLabel && v.startsWith(committedLabel)) cityInput.value = v.slice(committedLabel.length);
-    else if (committedLabel && committedLabel.startsWith(v)) cityInput.value = '';
-    committedLabel = '';
-  }
   const q = cityInput.value.trim();
   if (q.length < 2) { hideAc(); return; }
   acList.innerHTML = '<div class="ac-loading">Searching…</div>';
