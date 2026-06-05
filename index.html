@@ -239,6 +239,22 @@ td.hi-c { color: var(--accent); font-weight: 500; }
 td.lo-c { color: var(--accent3); }
 td.rain-c { color: var(--accent3); }
 
+/* ── POLLEN ── */
+.pollen-summary { font-size: 12px; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pollen-summary b { color: var(--text); font-weight: 500; }
+.pollen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 8px; }
+.pollen-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; display: flex; flex-direction: column; gap: 6px; }
+.pollen-name { font-size: 11px; color: var(--muted); text-transform: capitalize; }
+.pollen-val { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.pollen-pill { align-self: flex-start; font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 99px; letter-spacing: 0.04em; }
+.pl-0 { background: #3a3a3a; color: #cfcfcf; }
+.pl-1 { background: #5bbd6b; color: #06210c; }
+.pl-2 { background: #e6c93f; color: #2a2300; }
+.pl-3 { background: #e8923a; color: #2a1600; }
+.pl-4 { background: #e2574c; color: #2a0a08; }
+.pollen-note { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.pollen-disc { font-size: 10px; color: var(--muted); opacity: 0.7; margin-top: 12px; letter-spacing: 0.03em; }
+
 /* ── MONTH OVERVIEW (calendar) ── */
 .mo-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin-bottom: 16px; }
 .mo-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; }
@@ -351,6 +367,12 @@ td.rain-c { color: var(--accent3); }
       <div class="hourly-scroll" id="hourlyScroll"></div>
     </div>
 
+    <!-- POLLEN -->
+    <div class="card" id="pollenCard" style="animation-delay:0.13s">
+      <div class="card-title accent">Pollen — Today</div>
+      <div id="pollenBody"></div>
+    </div>
+
     <!-- 7-DAY -->
     <div class="card" style="animation-delay:0.15s">
       <div class="card-title accent2">7-Day Forecast</div>
@@ -424,6 +446,32 @@ const PRECIP_CODES = new Set([51,53,55,56,57,61,63,65,66,67,71,73,75,77,80,81,82
 // Only treat an hour/day as wet when the forecast *condition* is precipitation —
 // not merely a high "chance of >=0.1mm". Keeps it from looking rainy everywhere.
 const isWet = code => PRECIP_CODES.has(code);
+
+// ── POLLEN (Open-Meteo Air Quality / CAMS, Europe only) ──────────
+// Per-type grains/m³ thresholds → [moderate, high, very-high]; below moderate = Low.
+const POLLEN = {
+  alder_pollen:  {name:'Alder',   t:[10,50,100]},
+  birch_pollen:  {name:'Birch',   t:[10,50,100]},
+  grass_pollen:  {name:'Grass',   t:[20,50,150]},
+  mugwort_pollen:{name:'Mugwort', t:[10,25,50]},
+  olive_pollen:  {name:'Olive',   t:[20,50,150]},
+  ragweed_pollen:{name:'Ragweed', t:[5,20,50]},
+};
+const POLLEN_LEVELS=[
+  {label:'None',     cls:'pl-0'},
+  {label:'Low',      cls:'pl-1'},
+  {label:'Moderate', cls:'pl-2'},
+  {label:'High',     cls:'pl-3'},
+  {label:'Very High',cls:'pl-4'},
+];
+function pollenLevel(v, t){
+  if (v==null) return -1;          // no data
+  if (v<=0)   return 0;            // none
+  if (v<t[0]) return 1;            // low
+  if (v<t[1]) return 2;            // moderate
+  if (v<t[2]) return 3;            // high
+  return 4;                        // very high
+}
 
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
 let committedCity=false, committedLabel='';   // a city is shown in the box; first keystroke replaces it
@@ -604,6 +652,7 @@ async function loadWeather(lat, lon, label) {
     setupHistorical();
     setupMonth();
     fetchHistorical();   // auto-show the last 5 years for today
+    fetchPollen(lat, lon);
   } catch(e) {
     let msg='Could not load weather data.', hint='';
     if (e.name==='AbortError') hint='Request timed out. Check your connection.';
@@ -754,6 +803,35 @@ async function fetchHistorical() {
   rows.forEach(r=>{html+=`<tr><td>${r.year}</td><td style="text-align:left">${wc(r.code).i} ${wc(r.code).d}</td><td class="hi-c">${T(r.hi)}</td><td class="lo-c">${T(r.lo)}</td><td class="rain-c">${r.rain!=null?r.rain.toFixed(1):'—'}</td><td>${W(r.wind)}</td></tr>`;});
   document.getElementById('histTable').innerHTML=html+'</tbody>';
   document.getElementById('histResults').classList.remove('hidden');
+}
+
+// ── POLLEN ───────────────────────────────────────────────────────
+async function fetchPollen(lat, lon) {
+  const body=document.getElementById('pollenBody');
+  body.innerHTML='<div class="loading"><div class="spinner"></div> Loading pollen…</div>';
+  try {
+    const c=new AbortController(); setTimeout(()=>c.abort(),9000);
+    const vars=Object.keys(POLLEN).join(',');
+    const url=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=${vars}&timezone=auto`;
+    const r=await fetch(url,{signal:c.signal}); if(!r.ok) throw new Error('HTTP '+r.status);
+    const cur=(await r.json()).current||{};
+    const items=Object.entries(POLLEN)
+      .map(([k,info])=>({name:info.name, val:cur[k], lvl:pollenLevel(cur[k], info.t)}))
+      .filter(it=>it.val!=null);
+    if (!items.length) { body.innerHTML='<p class="pollen-note">Pollen data is available for European locations only.</p>'; return; }
+    items.sort((a,b)=>b.lvl-a.lvl || b.val-a.val);
+    const worst=items[0], wL=POLLEN_LEVELS[worst.lvl];
+    let html=`<p class="pollen-summary">Highest today: <b>${worst.name}</b> <span class="pollen-pill ${wL.cls}">${wL.label}</span></p><div class="pollen-grid">`;
+    items.forEach(it=>{
+      const L=POLLEN_LEVELS[it.lvl];
+      html+=`<div class="pollen-item"><div class="pollen-name">${it.name}</div>`
+          + `<div class="pollen-val">${Math.round(it.val)} <span style="font-size:10px;color:var(--muted)">grains/m³</span></div>`
+          + `<span class="pollen-pill ${L.cls}">${L.label}</span></div>`;
+    });
+    body.innerHTML=html+'</div><p class="pollen-disc">Approximate severity · source: CAMS via Open-Meteo Air Quality</p>';
+  } catch(e) {
+    body.innerHTML='<p class="pollen-note">Pollen data is unavailable right now.</p>';
+  }
 }
 
 // ── PAST MONTH OVERVIEW ──────────────────────────────────────────
