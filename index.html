@@ -422,6 +422,7 @@ const PRECIP_CODES = new Set([51,53,55,56,57,61,63,65,66,67,71,73,75,77,80,81,82
 const isWet = (code, prob) => PRECIP_CODES.has(code) || (prob != null && prob >= 20);
 
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
+let committedCity=false, committedLabel='';   // a city is shown in the box; first keystroke replaces it
 const cityInput = document.getElementById('cityInput');
 const acList    = document.getElementById('acList');
 
@@ -483,6 +484,14 @@ function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF
 cityInput.addEventListener('input', () => {
   clearTimeout(acTimer);
   acFocused = -1;
+  // First edit after a city was selected: clear the old name, keep only what was just typed.
+  if (committedCity) {
+    committedCity = false;
+    const v = cityInput.value;
+    if (committedLabel && v.startsWith(committedLabel)) cityInput.value = v.slice(committedLabel.length);
+    else if (committedLabel && committedLabel.startsWith(v)) cityInput.value = '';
+    committedLabel = '';
+  }
   const q = cityInput.value.trim();
   if (q.length < 2) { hideAc(); return; }
   acList.innerHTML = '<div class="ac-loading">Searching…</div>';
@@ -537,6 +546,7 @@ function pickResult(r) {
   const region = [r.admin1, r.country].filter(Boolean).join(', ');
   const label = r.name + (region ? ', ' + region : '');
   cityInput.value = label;
+  committedCity = true; committedLabel = label;   // next typed letter starts a fresh search
   hideAc();
   loadWeather(r.lat, r.lon, label);
 }
