@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SkyCast — Weather</title>
+<meta name="theme-color" content="#0e0e0e">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2322d3ee%22/%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%236366f1%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a855f7%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230e0e0e%22/%3E%3Cpath%20d%3D%22M32%2010C32%2010%2049%2030%2049%2041A17%2017%200%200%201%2015%2041C15%2030%2032%2010%2032%2010Z%22%20fill%3D%22url%28%23g%29%22/%3E%3Cpath%20d%3D%22M25%2037a7%209%200%200%200%205%2011%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-opacity%3D%22.75%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2322d3ee%22/%3E%3Cstop%20offset%3D%22.5%22%20stop-color%3D%22%236366f1%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a855f7%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230e0e0e%22/%3E%3Cpath%20d%3D%22M32%2010C32%2010%2049%2030%2049%2041A17%2017%200%200%201%2015%2041C15%2030%2032%2010%2032%2010Z%22%20fill%3D%22url%28%23g%29%22/%3E%3Cpath%20d%3D%22M25%2037a7%209%200%200%200%205%2011%22%20fill%3D%22none%22%20stroke%3D%22%23fff%22%20stroke-opacity%3D%22.75%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E">
 <script>try{var t=localStorage.getItem('skycast-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -418,8 +421,9 @@ const fmtTime = iso => { if(!iso) return '—'; const d=new Date(iso); return d.
 
 // Weather codes that actually mean precipitation (drizzle, rain, snow, storms)
 const PRECIP_CODES = new Set([51,53,55,56,57,61,63,65,66,67,71,73,75,77,80,81,82,85,86,95,96,99]);
-// Decide whether rain info is worth showing at all (no clutter on dry hours/days)
-const isWet = (code, prob) => PRECIP_CODES.has(code) || (prob != null && prob >= 20);
+// Only treat an hour/day as wet when the forecast *condition* is precipitation —
+// not merely a high "chance of >=0.1mm". Keeps it from looking rainy everywhere.
+const isWet = code => PRECIP_CODES.has(code);
 
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
 let committedCity=false, committedLabel='';   // a city is shown in the box; first keystroke replaces it
@@ -649,9 +653,9 @@ function renderWeather(d) {
     document.getElementById('todayLocal').textContent = '';
   }
 
-  // Rain Chance (now) — current-hour probability, shown only if rain is plausible
+  // Rain Chance (now) — current-hour probability, shown only when it's actually raining
   const rowRain = document.getElementById('rowRain');
-  if (isWet(cur.weather_code, nowProb)) {
+  if (isWet(cur.weather_code)) {
     document.getElementById('sRain').textContent = (nowProb ?? 0) + '%';
     rowRain.classList.remove('hidden');
   } else {
@@ -670,7 +674,7 @@ function renderWeather(d) {
     el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}</div>
       <div class="h-icon">${wc(code, d.hourly.is_day[i]).i}</div>
       <div class="h-temp">${T(d.hourly.temperature_2m[i])}</div>
-      <div class="h-rain">${isWet(code,prob)?'💧'+prob+'%':''}</div>`;
+      <div class="h-rain">${isWet(code)?'🌧️'+prob+'%':''}</div>`;
     scroll.appendChild(el);
   }
 
@@ -685,7 +689,7 @@ function renderWeather(d) {
     const hi=days.temperature_2m_max[i], lo=days.temperature_2m_min[i];
     const barL=((lo-gMin)/range*100).toFixed(1), barW=((hi-lo)/range*100).toFixed(1);
     const rainP=days.precipitation_probability_max[i];
-    const wet=isWet(days.weather_code[i], rainP);
+    const wet=isWet(days.weather_code[i]);
     const row=document.createElement('div'); row.className='week-row';
     row.innerHTML=`<div class="wr-day">${name}<small>${dlbl}</small></div>
       <div class="wr-icon">${wc(days.weather_code[i]).i}</div>
