@@ -811,12 +811,16 @@ function dayChart(hourly, dateStr){
     let i=Math.round((vx-L)/(W-L-R)*(n-1));
     select(Math.round(i/2)*2);                 // snap to 2-hour steps
   }
-  svg.addEventListener('pointerdown',e=>{ e.preventDefault(); svg.setPointerCapture&&svg.setPointerCapture(e.pointerId); fromEvent(e); });
-  svg.addEventListener('pointermove',e=>{ if(e.pointerType==='mouse'&&!e.buttons){ fromEvent(e); return; } if(e.buttons||e.pointerType!=='mouse'){ e.preventDefault(); fromEvent(e); } });
-  // default: current hour for today, else midday
-  let def=hrs.indexOf(12); if(def<0)def=Math.floor(n/2);
-  if(WX&&WX.current&&WX.current.time&&WX.current.time.slice(0,10)===dateStr){ const ch=hrs.indexOf(+WX.current.time.slice(11,13)); if(ch>=0)def=ch; }
-  select(Math.round(def/2)*2);
+  // the readout only appears while actively pressing/dragging, then disappears
+  function showFX(v){ tip.style.display=v?'':'none'; cl.style.display=v?'':'none'; cd.style.display=v?'':'none'; if(cd2&&!v) cd2.style.display='none'; }
+  let active=false;
+  svg.addEventListener('pointerdown',e=>{ e.preventDefault(); svg.setPointerCapture&&svg.setPointerCapture(e.pointerId); active=true; showFX(true); fromEvent(e); });
+  svg.addEventListener('pointermove',e=>{ if(!active && e.pointerType!=='mouse') return; if(e.pointerType==='mouse'&&!active){ showFX(true); } e.preventDefault(); fromEvent(e); });
+  const end=()=>{ active=false; showFX(false); };
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+  svg.addEventListener('pointerleave', e=>{ if(e.pointerType==='mouse') end(); });
+  showFX(false);     // hidden until pressed
   return wrap;
 }
 
