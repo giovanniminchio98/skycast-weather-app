@@ -270,10 +270,7 @@ body::before {
 .dd-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
 .dd-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
 .dd-val { font-size: 13px; font-weight: 500; }
-.dd-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-.dd-tab { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: var(--font); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 13px; border-radius: 99px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.dd-tab.active { background: var(--accent); color: var(--bg); }
-.dd-pane.hidden { display: none; }
+.dd-subtitle { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent3); margin: 16px 0 8px; }
 .dd-chart svg { width: 100%; height: auto; display: block; }
 .dd-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10px; color: var(--muted); margin-top: 6px; }
 .dd-legend i { display: inline-block; width: 11px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
@@ -333,8 +330,8 @@ td.rain-c { color: var(--accent3); }
 .tappable { cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
 .tappable:hover { border-color: var(--accent); }
 .tappable:active { transform: scale(0.995); }
-.tap-hint { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; margin-left: 6px; text-transform: none; }
-.mini-btn { float: right; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: var(--font); font-size: 10px; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
+.tap-hint { display: inline-block; font-size: 9px; color: var(--accent); letter-spacing: 0.06em; margin-left: 8px; text-transform: uppercase; border: 1px solid var(--accent); background: rgba(var(--accent-rgb),0.12); border-radius: 99px; padding: 3px 10px; vertical-align: middle; }
+.mini-btn { float: right; min-width: 66px; text-align: center; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: var(--font); font-size: 10px; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
 .mini-btn:active { opacity: 0.8; }
 
 /* ── MODAL ── */
@@ -1469,11 +1466,6 @@ function renderWeather(d) {
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
     const detail=document.createElement('div'); detail.className='day-detail hidden';
     detail.innerHTML=`<div class="day-detail-title">${name} · ${dlbl} · ${ic.d}</div>
-      <div class="dd-tabs">
-        <button type="button" class="dd-tab active" data-v="sum">Summary</button>
-        <button type="button" class="dd-tab" data-v="hr">Hourly</button>
-      </div>
-      <div class="dd-pane" data-pane="sum">
       <div class="dd-grid">
         <div class="dd-box"><div class="dd-label">High</div><div class="dd-val" style="color:var(--accent)">${T(hi)}</div></div>
         <div class="dd-box"><div class="dd-label">Low</div><div class="dd-val" style="color:var(--accent3)">${T(lo)}</div></div>
@@ -1487,20 +1479,16 @@ function renderWeather(d) {
         <div class="dd-box"><div class="dd-label">Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
         <div class="dd-box"><div class="dd-label">Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
       </div>
-      </div>
-      <div class="dd-pane hidden" data-pane="hr"></div>`;
-    const hrPane=detail.querySelector('[data-pane="hr"]'), sumPane=detail.querySelector('[data-pane="sum"]');
-    detail.querySelectorAll('.dd-tab').forEach(tb=>tb.addEventListener('click',()=>{
-      detail.querySelectorAll('.dd-tab').forEach(x=>x.classList.toggle('active',x===tb));
-      const hr=tb.dataset.v==='hr';
-      sumPane.classList.toggle('hidden',hr); hrPane.classList.toggle('hidden',!hr);
-      if (hr && !hrPane.dataset.built){ hrPane.innerHTML=dayChart(d.hourly, dateStr, days.sunrise[i], days.sunset[i]); hrPane.dataset.built='1'; }
-    }));
+      <div class="dd-subtitle">Hour by hour</div>
+      <div class="dd-chart-wrap"></div>`;
+    const chartWrap=detail.querySelector('.dd-chart-wrap');
     row.addEventListener('click',()=>{
       wkGrid.querySelectorAll('.day-detail').forEach(x=>{if(x!==detail)x.classList.add('hidden');});
       wkGrid.querySelectorAll('.week-row').forEach(x=>{if(x!==row)x.classList.remove('active');});
       detail.classList.toggle('hidden');
-      row.classList.toggle('active',!detail.classList.contains('hidden'));
+      const open=!detail.classList.contains('hidden');
+      row.classList.toggle('active',open);
+      if (open && !chartWrap.dataset.built){ chartWrap.innerHTML=dayChart(d.hourly, dateStr); chartWrap.dataset.built='1'; }
     });
     const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
     (i>=7 && farBox ? farBox : wkGrid).appendChild(wrap);
