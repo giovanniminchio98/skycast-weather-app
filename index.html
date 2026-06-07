@@ -21,7 +21,7 @@
    Palettes selected via [data-theme] on <html>:
    · current    – the original dark / lime editorial look (default)
    · minimal    – super-minimalist light monochrome
-   · sunset     – warm golden-hour sky, frosted glass, coral accents
+   · live        – background reflects the current weather (rain/sun/snow…)
    · ai         – "Neural" teal/blue AI-entity look + live synapse canvas  */
 
 :root[data-theme="current"] {
@@ -38,19 +38,19 @@
   --accent-rgb:20,20,20; --accent3-rgb:122,122,122;
   --radius:10px; --display:'DM Serif Display'; --card-blur:0px;
 }
-:root[data-theme="sunset"] {
-  --bg:#fde7cf; --surface:rgba(255,255,255,0.5); --card:rgba(255,255,255,0.55); --border:rgba(255,138,92,0.3);
-  --accent:#ff5d3b; --accent2:#ff9f1c; --accent3:#2f8fff;
-  --text:#4a2a1c; --muted:#a37a64; --bull:#ff5d3b; --bear:#d4341f;
-  --accent-rgb:255,93,59; --accent3-rgb:47,143,255;
-  --radius:22px; --display:'DM Serif Display'; --card-blur:18px;
+:root[data-theme="live"] {
+  --bg:#1a2233; --surface:rgba(255,255,255,0.08); --card:rgba(16,22,38,0.28); --border:rgba(255,255,255,0.16);
+  --accent:#7cc4ff; --accent2:#ffd166; --accent3:#5eead4;
+  --text:#f2f6ff; --muted:#c2cde0; --bull:#7cc4ff; --bear:#ff8a90;
+  --accent-rgb:124,196,255; --accent3-rgb:94,234,212;
+  --radius:18px; --display:'DM Serif Display'; --card-blur:13px;
 }
 :root[data-theme="ai"] {
-  --bg:#020809; --surface:#06141a; --card:rgba(8,26,30,0.5); --border:rgba(45,230,200,0.22);
+  --bg:#020809; --surface:rgba(8,26,30,0.35); --card:rgba(8,26,30,0.3); --border:rgba(45,230,200,0.22);
   --accent:#16efc6; --accent2:#38bdf8; --accent3:#5eead4;
   --text:#e6fff8; --muted:#7fb8b0; --bull:#16efc6; --bear:#ff7a85;
   --accent-rgb:22,239,198; --accent3-rgb:94,234,212;
-  --radius:14px; --display:'Orbitron'; --card-blur:16px;
+  --radius:14px; --display:'Orbitron'; --card-blur:14px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -92,16 +92,19 @@ body::before {
 :root[data-theme="minimal"] .brand-mark { animation: none; filter: none; }
 :root[data-theme="minimal"] .card { box-shadow: none; }
 
-/* Sunset theme: warm animated golden-hour sky with a glowing sun */
-:root[data-theme="sunset"] body { background: linear-gradient(180deg,#ffd5a8 0%,#ffb98c 35%,#ff9a76 65%,#ff7e7e 100%); background-attachment: fixed; }
-:root[data-theme="sunset"] body::before {
-  background:
-    radial-gradient(circle 220px at 78% 24%, rgba(255,247,214,0.95) 0%, rgba(255,190,120,0.45) 40%, transparent 70%),
-    radial-gradient(ellipse 70% 50% at 20% 90%, rgba(255,120,120,0.35) 0%, transparent 60%);
-  animation: sunGlow 8s ease-in-out infinite alternate;
-}
-@keyframes sunGlow { from{transform:translateY(0);opacity:0.9;} to{transform:translateY(-10px);opacity:1;} }
-:root[data-theme="sunset"] .brand-mark { filter: drop-shadow(0 0 12px #ff9f1c); }
+/* Live theme: background sky changes with the current weather (set via data-live);
+   a scrim keeps light text readable, and #liveCanvas adds rain/snow/etc. */
+:root[data-theme="live"] body { background:#1a2233; transition: background 1s ease; }
+:root[data-theme="live"][data-live="clear-day"]   body { background: linear-gradient(170deg,#2e7bc4 0%,#7db9e8 70%,#cfe7fb 100%); }
+:root[data-theme="live"][data-live="clear-night"] body { background: linear-gradient(180deg,#070d22 0%,#142a55 100%); }
+:root[data-theme="live"][data-live="clouds"]      body { background: linear-gradient(180deg,#54627a 0%,#8893a6 100%); }
+:root[data-theme="live"][data-live="rain"]        body { background: linear-gradient(180deg,#2c3543 0%,#4a5667 100%); }
+:root[data-theme="live"][data-live="storm"]       body { background: linear-gradient(180deg,#1c2230 0%,#343c4d 100%); }
+:root[data-theme="live"][data-live="snow"]        body { background: linear-gradient(180deg,#6f7e93 0%,#aebccd 100%); }
+:root[data-theme="live"][data-live="fog"]         body { background: linear-gradient(180deg,#71777f 0%,#9aa1a9 100%); }
+:root[data-theme="live"] body::before { background: linear-gradient(180deg, rgba(8,12,20,0.18) 0%, rgba(8,12,20,0.5) 100%); animation: none; }
+#liveCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0.6s ease; }
+:root[data-theme="live"] #liveCanvas { opacity: 1; }
 * { position: relative; z-index: 1; }
 
 /* node-network canvas — only visible in AI theme */
@@ -150,7 +153,7 @@ body::before {
   transition: background 0.4s ease, border-color 0.4s ease;
 }
 :root[data-theme="ai"] .card { box-shadow: 0 0 0 1px rgba(var(--accent-rgb),0.08), 0 18px 50px -22px rgba(var(--accent-rgb),0.55); }
-:root[data-theme="sunset"] .card { box-shadow: 0 18px 44px -22px rgba(255,93,59,0.5); }
+:root[data-theme="live"] .card { box-shadow: 0 16px 40px -24px rgba(0,0,0,0.7); }
 .card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; }
 .card-title.accent  { color: var(--accent); }
 .card-title.accent2 { color: var(--accent2); }
@@ -353,6 +356,8 @@ td.rain-c { color: var(--accent3); }
 
 /* ── WHAT TO WEAR ── */
 .wear-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wear-note { flex-basis: 100%; width: 100%; font-size: 12px; color: var(--muted); margin-bottom: 2px; line-height: 1.5; }
+.wear-note b { color: var(--accent); }
 .wear-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 7px; }
 .wear-chip .wc-emoji { font-size: 16px; }
 
@@ -397,6 +402,7 @@ td.rain-c { color: var(--accent3); }
 <body>
 
 <canvas id="neuralCanvas" aria-hidden="true"></canvas>
+<canvas id="liveCanvas" aria-hidden="true"></canvas>
 
 <div class="header">
   <div class="eyebrow">● Live Forecast</div>
@@ -406,7 +412,7 @@ td.rain-c { color: var(--accent3); }
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
       <button data-theme="current">Current</button>
       <button data-theme="minimal">Minimal</button>
-      <button data-theme="sunset">Sunset</button>
+      <button data-theme="live">Live</button>
       <button data-theme="ai">Neural</button>
     </div>
     <span class="mode-tag" id="modeTag">Classic</span>
@@ -553,7 +559,7 @@ td.rain-c { color: var(--accent3); }
       <div id="euMapEl"></div>
       <div id="euOverlay" class="map-overlay">Loading cities…</div>
     </div>
-    <p class="map-status">Live conditions across European cities — each pin is the current weather there. Tap a pin for the temperature.</p>
+    <p class="map-status">Live conditions across Europe — cities load for whatever area you're viewing; pan and zoom in to reveal more. Tap a pin for details.</p>
   </div>
 
   <div class="disclaimer">SkyCast · Open-Meteo · Map: OpenStreetMap/CARTO</div>
@@ -690,18 +696,19 @@ function closeModal(){
 
 // Tiny inline SVG bar chart (used for the hourly rain graph)
 function barChart(labels, values, opts={}){
-  const W=Math.max(labels.length*26,320), H=150, pad=24, top=14;
+  const W=Math.max(labels.length*30,320), H=158, pad=24, top=20;
   const max=Math.max(opts.max||0, ...values, 1);
   const bw=(W-pad*2)/labels.length;
-  let bars='', axis='';
+  let bars='', axis='', vals='';
   values.forEach((v,i)=>{
     const h=(v/max)*(H-top-pad);
-    const x=pad+i*bw, y=H-pad-h;
-    bars+=`<rect x="${(x+bw*0.18).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.64).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="var(--accent3)"><title>${labels[i]}: ${v}${opts.unit||''}</title></rect>`;
-    if (i%3===0) axis+=`<text x="${(x+bw/2).toFixed(1)}" y="${H-7}" text-anchor="middle" font-size="9" fill="var(--muted)">${labels[i]}</text>`;
+    const x=pad+i*bw, y=H-pad-h, cx=x+bw/2;
+    bars+=`<rect x="${(x+bw*0.16).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.68).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="var(--accent3)"><title>${labels[i]}: ${v}${opts.unit||''}</title></rect>`;
+    if (v>0) vals+=`<text x="${cx.toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="var(--text)">${Math.round(v)}</text>`;
+    if (i%2===0) axis+=`<text x="${cx.toFixed(1)}" y="${H-7}" text-anchor="middle" font-size="9" fill="var(--muted)">${labels[i]}</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="min-width:${W}px">`
-    + `<text x="4" y="12" font-size="9" fill="var(--muted)">${max}${opts.unit||''}</text>${bars}${axis}</svg>`;
+    + `<text x="4" y="12" font-size="9" fill="var(--muted)">${max}${opts.unit||''}</text>${bars}${vals}${axis}</svg>`;
 }
 
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
@@ -819,7 +826,7 @@ function computeBestDay(days){
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
-const MODE_LABELS = { current:'Classic', minimal:'Minimal', sunset:'☀ Golden Hour', ai:'⚡ Neural Entity Online' };
+const MODE_LABELS = { current:'Classic', minimal:'Minimal', live:'◉ Live Weather', ai:'⚡ Neural Entity Online' };
 function setTheme(name){
   if(!MODE_LABELS[name]) name='current';
   document.documentElement.setAttribute('data-theme', name);
@@ -827,6 +834,7 @@ function setTheme(name){
   document.querySelectorAll('#themeSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.theme===name));
   document.getElementById('modeTag').textContent = MODE_LABELS[name];
   name==='ai' ? startNeural() : stopNeural();
+  name==='live' ? startLive() : stopLive();
 }
 document.querySelectorAll('#themeSwitch button').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
 
@@ -903,6 +911,62 @@ function drawNeural(){
 function startNeural(){ if(neuralRAF) return; if(!canvas) initNeural(); resizeNeural(); buildNodes(); neuralRAF=requestAnimationFrame(drawNeural); }
 function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF=null; ctx&&ctx.clearRect(0,0,innerWidth,innerHeight); } }
 
+// ── LIVE WEATHER CANVAS — background reflects current conditions ──
+let liveRAF=null, lcanvas, lctx, lparts=[], liveMode='clear-day', liveFlash=0, liveT=0;
+function liveModeFor(code, isDay){
+  if ([95,96,99].includes(code)) return 'storm';
+  if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) return 'rain';
+  if ([71,73,75,77,85,86].includes(code)) return 'snow';
+  if ([45,48].includes(code)) return 'fog';
+  if ([2,3].includes(code)) return 'clouds';
+  return isDay===0 ? 'clear-night' : 'clear-day';
+}
+function initLive(){
+  lcanvas=document.getElementById('liveCanvas'); lctx=lcanvas.getContext('2d'); resizeLive();
+  addEventListener('resize', ()=>{ if(liveRAF){ resizeLive(); buildLive(); } });
+}
+function resizeLive(){ const dpr=Math.min(devicePixelRatio||1,2); lcanvas.width=innerWidth*dpr; lcanvas.height=innerHeight*dpr; lcanvas.style.width=innerWidth+'px'; lcanvas.style.height=innerHeight+'px'; lctx.setTransform(dpr,0,0,dpr,0,0); }
+function buildLive(){
+  const W=innerWidth, H=innerHeight; lparts=[];
+  if (liveMode==='rain'||liveMode==='storm'){
+    const n=liveMode==='storm'?320:200;
+    for(let i=0;i<n;i++) lparts.push({x:Math.random()*W,y:Math.random()*H,l:8+Math.random()*12,s:7+Math.random()*7});
+  } else if (liveMode==='snow'){
+    for(let i=0;i<140;i++) lparts.push({x:Math.random()*W,y:Math.random()*H,r:1+Math.random()*2.5,s:0.6+Math.random()*1.2,d:Math.random()*Math.PI*2});
+  } else if (liveMode==='clear-night'){
+    for(let i=0;i<110;i++) lparts.push({x:Math.random()*W,y:Math.random()*H*0.8,r:0.5+Math.random()*1.3,t:Math.random()*Math.PI*2});
+  } else if (liveMode==='clouds'||liveMode==='fog'){
+    for(let i=0;i<8;i++) lparts.push({x:Math.random()*W,y:40+Math.random()*H*0.6,r:90+Math.random()*120,s:0.2+Math.random()*0.4});
+  }
+}
+function drawLive(){
+  const W=innerWidth, H=innerHeight; lctx.clearRect(0,0,W,H); liveT++;
+  if (liveMode==='rain'||liveMode==='storm'){
+    lctx.strokeStyle='rgba(180,205,235,0.45)'; lctx.lineWidth=1.1;
+    for(const p of lparts){ lctx.beginPath(); lctx.moveTo(p.x,p.y); lctx.lineTo(p.x-2,p.y+p.l); lctx.stroke(); p.y+=p.s; p.x-=0.6; if(p.y>H){p.y=-p.l;p.x=Math.random()*W;} }
+    if (liveMode==='storm'){ if(Math.random()<0.006) liveFlash=1; if(liveFlash>0){ lctx.fillStyle=`rgba(255,255,255,${liveFlash*0.5})`; lctx.fillRect(0,0,W,H); liveFlash-=0.05; } }
+  } else if (liveMode==='snow'){
+    lctx.fillStyle='rgba(255,255,255,0.9)';
+    for(const p of lparts){ lctx.beginPath(); lctx.arc(p.x,p.y,p.r,0,Math.PI*2); lctx.fill(); p.y+=p.s; p.x+=Math.sin((liveT*0.02)+p.d)*0.6; if(p.y>H){p.y=-4;p.x=Math.random()*W;} }
+  } else if (liveMode==='clear-day'){
+    const g=lctx.createRadialGradient(W*0.8,H*0.16,10,W*0.8,H*0.16,Math.max(W,H)*0.5);
+    g.addColorStop(0,'rgba(255,247,210,0.95)'); g.addColorStop(0.18,'rgba(255,224,150,0.5)'); g.addColorStop(0.5,'transparent');
+    lctx.fillStyle=g; lctx.fillRect(0,0,W,H);
+  } else if (liveMode==='clear-night'){
+    for(const s of lparts){ const a=0.4+0.5*Math.abs(Math.sin(liveT*0.03+s.t)); lctx.fillStyle=`rgba(255,255,255,${a})`; lctx.beginPath(); lctx.arc(s.x,s.y,s.r,0,Math.PI*2); lctx.fill(); }
+    const g=lctx.createRadialGradient(W*0.82,H*0.18,4,W*0.82,H*0.18,90); g.addColorStop(0,'rgba(245,245,225,0.9)'); g.addColorStop(1,'transparent'); lctx.fillStyle=g; lctx.beginPath(); lctx.arc(W*0.82,H*0.18,90,0,Math.PI*2); lctx.fill();
+  } else if (liveMode==='clouds'||liveMode==='fog'){
+    const alpha=liveMode==='fog'?0.20:0.13;
+    for(const c of lparts){ const g=lctx.createRadialGradient(c.x,c.y,10,c.x,c.y,c.r); g.addColorStop(0,`rgba(255,255,255,${alpha})`); g.addColorStop(1,'transparent'); lctx.fillStyle=g; lctx.beginPath(); lctx.arc(c.x,c.y,c.r,0,Math.PI*2); lctx.fill(); c.x+=c.s; if(c.x-c.r>W) c.x=-c.r; }
+  }
+  liveRAF=requestAnimationFrame(drawLive);
+}
+function setLiveMode(mode){ liveMode=mode; document.documentElement.setAttribute('data-live',mode); if(liveRAF) buildLive(); }
+function startLive(){ if(liveRAF) return; if(!lcanvas) initLive(); resizeLive();
+  if (WX && WX.current) setLiveMode(liveModeFor(WX.current.weather_code, WX.current.is_day)); else setLiveMode('clear-day');
+  buildLive(); liveRAF=requestAnimationFrame(drawLive); }
+function stopLive(){ if(liveRAF){ cancelAnimationFrame(liveRAF); liveRAF=null; lctx&&lctx.clearRect(0,0,innerWidth,innerHeight); } }
+
 // ── TABS ─────────────────────────────────────────────────────────
 document.querySelectorAll('#tabbar button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 function switchTab(t){
@@ -946,14 +1010,15 @@ const EU_CITIES=[
   ['Kyiv',50.45,30.52],['Lviv',49.84,24.03],['Odesa',46.48,30.72],
   ['Istanbul',41.01,28.98],['Ankara',39.93,32.86],['Izmir',38.42,27.14]
 ];
-let euMap=null, euLayer=null;
+let euMap=null, euLayer=null, euMoveTimer=null, euReqId=0;
 function openEuropeMap(){
   if (!window.L){ setOverlay('euOverlay','Map library failed to load'); return; }
   if (!euMap){
     euMap=L.map('euMapEl',{zoomControl:true}).setView([52,12], 4);
     L.tileLayer(CARTO, {maxZoom:11, attribution:'© OpenStreetMap, © CARTO'}).addTo(euMap);
     euMap.on('zoomend', updateEuZoom);
-    loadEurope();
+    euMap.on('moveend', scheduleEuLoad);   // dynamic: reload cities for the new view
+    scheduleEuLoad();
   }
   setTimeout(()=>{ if(euMap){ euMap.invalidateSize(); updateEuZoom(); } }, 130);
 }
@@ -961,47 +1026,88 @@ function updateEuZoom(){
   const el=document.getElementById('euMapEl');
   if (el && euMap) el.classList.toggle('zoomed', euMap.getZoom()>=6);
 }
-async function loadEurope(){
+function scheduleEuLoad(){ clearTimeout(euMoveTimer); euMoveTimer=setTimeout(loadCities, 500); }
+
+// Dynamically load whichever cities are in view (denser as you zoom in),
+// via OpenStreetMap Overpass (keyless); fall back to the static list.
+async function loadCities(){
+  const myId=++euReqId;
+  const b=euMap.getBounds(), zoom=euMap.getZoom();
   setOverlay('euOverlay','Loading cities…');
-  try{
-    const SIZE=50, chunks=[];
-    for (let i=0;i<EU_CITIES.length;i+=SIZE) chunks.push(EU_CITIES.slice(i,i+SIZE));
-    const results=await Promise.all(chunks.map(async ch=>{
-      const lats=ch.map(c=>c[1]).join(','), lons=ch.map(c=>c[2]).join(',');
-      const ac=new AbortController(); setTimeout(()=>ac.abort(), 12000);
-      const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day&timezone=auto`;
-      const data=await (await fetch(url, {signal:ac.signal})).json();
-      return Array.isArray(data)?data:[data];
-    }));
-    const arr=results.flat();   // aligned to EU_CITIES order
-    if (euLayer) euLayer.remove();
-    euLayer=L.layerGroup().addTo(euMap);
-    let placed=0;
-    arr.forEach((r,i)=>{
-      const city=EU_CITIES[i]; if(!city||!r.current) return;
-      const info=wc(r.current.weather_code, r.current.is_day), tmp=Math.round(r.current.temperature_2m);
-      const html=`<div class="pin"><span class="pin-emoji">${info.i}</span><span class="pin-temp">${tmp}°</span><span class="pin-name">${city[0]}</span></div>`;
-      L.marker([city[1],city[2]], {icon:L.divIcon({className:'emoji-pin', html, iconSize:[46,46], iconAnchor:[23,23]})})
-        .bindPopup(`<b>${city[0]}</b><br>${info.i} ${info.d} · ${tmp}°C`).addTo(euLayer);
-      placed++;
-    });
-    setOverlay('euOverlay', placed?'● Live · '+placed+' cities · zoom in for detail':'No city data', placed>0);
-    if(!placed) setOverlay('euOverlay','No city data');
-  }catch(e){ setOverlay('euOverlay','Could not load city weather'); }
+  let cities=await fetchCitiesOverpass(b, zoom).catch(()=>null);
+  if (!cities || !cities.length) cities=fallbackCities(b);
+  const cap = zoom<=4 ? 40 : zoom<=6 ? 60 : 80;
+  cities=cities.slice(0, cap);
+  if (myId!==euReqId) return;
+  if (!cities.length){ if(euLayer) euLayer.remove(); setOverlay('euOverlay','No cities in view'); return; }
+  let wx;
+  try { wx=await fetchCityWeather(cities); } catch(e){ setOverlay('euOverlay','Could not load city weather'); return; }
+  if (myId!==euReqId) return;
+  if (euLayer) euLayer.remove();
+  euLayer=L.layerGroup().addTo(euMap);
+  let placed=0;
+  cities.forEach((city,i)=>{
+    const r=wx[i]; if(!r||!r.current) return;
+    const info=wc(r.current.weather_code, r.current.is_day), tmp=Math.round(r.current.temperature_2m);
+    const html=`<div class="pin"><span class="pin-emoji">${info.i}</span><span class="pin-temp">${tmp}°</span><span class="pin-name">${city.name}</span></div>`;
+    L.marker([city.lat,city.lon], {icon:L.divIcon({className:'emoji-pin', html, iconSize:[46,46], iconAnchor:[23,23]})})
+      .bindPopup(`<b>${city.name}</b><br>${info.i} ${info.d} · ${tmp}°C`).addTo(euLayer);
+    placed++;
+  });
+  updateEuZoom();
+  setOverlay('euOverlay', placed?'● Live · '+placed+' cities · zoom for more':'No city data', placed>0);
+}
+async function fetchCitiesOverpass(b, zoom){
+  const bbox=`${b.getSouth().toFixed(3)},${b.getWest().toFixed(3)},${b.getNorth().toFixed(3)},${b.getEast().toFixed(3)}`;
+  const types = zoom>=7 ? ['city','town'] : ['city'];
+  const q=`[out:json][timeout:25];(${types.map(t=>`node["place"="${t}"]["name"](${bbox});`).join('')});out 400;`;
+  const ac=new AbortController(); setTimeout(()=>ac.abort(), 15000);
+  const res=await fetch('https://overpass-api.de/api/interpreter', {method:'POST', body:'data='+encodeURIComponent(q), signal:ac.signal});
+  if (!res.ok) throw new Error('overpass');
+  const d=await res.json();
+  const seen=new Set(), list=[];
+  (d.elements||[]).forEach(e=>{
+    if (!e.tags || !e.tags.name || e.lat==null) return;
+    const name=e.tags['name:en']||e.tags.name;
+    const key=name+Math.round(e.lat*5)+Math.round(e.lon*5);
+    if (seen.has(key)) return; seen.add(key);
+    list.push({name, lat:e.lat, lon:e.lon, pop:parseInt((e.tags.population||'').replace(/\D/g,''))||0});
+  });
+  list.sort((a,b)=>b.pop-a.pop);   // biggest cities first
+  return list;
+}
+function fallbackCities(b){
+  return EU_CITIES.filter(c=>b.contains([c[1],c[2]])).map(c=>({name:c[0], lat:c[1], lon:c[2], pop:0}));
+}
+async function fetchCityWeather(cities){
+  const SIZE=50, chunks=[];
+  for (let i=0;i<cities.length;i+=SIZE) chunks.push(cities.slice(i,i+SIZE));
+  const results=await Promise.all(chunks.map(async ch=>{
+    const lats=ch.map(c=>c.lat).join(','), lons=ch.map(c=>c.lon).join(',');
+    const ac=new AbortController(); setTimeout(()=>ac.abort(), 12000);
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+    const data=await (await fetch(url, {signal:ac.signal})).json();
+    return Array.isArray(data)?data:[data];
+  }));
+  return results.flat();   // aligned to cities order
 }
 
-// ── WHAT TO WEAR TODAY ───────────────────────────────────────────
+// ── WHAT TO WEAR TODAY (city-tailored: uses feels-like = wind + humidity) ──
 function renderWear(d){
   const cur=d.current, dy=d.daily;
-  const feels=cur.apparent_temperature ?? cur.temperature_2m;
+  const actual=cur.temperature_2m;
+  const feels=cur.apparent_temperature ?? actual;     // already factors wind chill + humidity
+  const hum=cur.relative_humidity_2m ?? null;
+  const windNow=cur.wind_speed_10m ?? 0;
   const rainP=dy.precipitation_probability_max[0]??0;
   const wet=isWet(dy.weather_code[0]) || rainP>=50;
   const uv=dy.uv_index_max[0]??0;
-  const wind=dy.wind_speed_10m_max[0]??0;
+  const wind=Math.max(windNow, dy.wind_speed_10m_max[0]??0);
   const swing=(dy.temperature_2m_max[0]??0)-(dy.temperature_2m_min[0]??0);
   const snowy=[71,73,75,77,85,86].includes(dy.weather_code[0]);
+  const diff=Math.round(actual-feels);                // +ve = feels colder than the thermometer
   const chips=[];
-  // main outfit (calibrated: ~17° → light jacket)
+  // main outfit — driven by feels-like, so windier/more humid cities dress warmer
   if (feels<0)       chips.push(['🧥','Heavy winter coat']);
   else if (feels<7)  chips.push(['🧥','Warm coat']);
   else if (feels<13) chips.push(['🧥','Jacket']);
@@ -1009,13 +1115,20 @@ function renderWear(d){
   else if (feels<23) chips.push(['👕','Long sleeves / light top']);
   else if (feels<28) chips.push(['👕','T-shirt']);
   else               chips.push(['🩳','Shorts & light clothing']);
+  // why it feels different here (the city-tailored bit)
+  if (diff>=3)  chips.push(['💨',`Wind makes it feel ${diff}° colder`]);
+  if (diff<=-2) chips.push(['💦','Humidity makes it feel warmer']);
+  // humidity-specific comfort
+  if (hum!=null && hum>=80 && actual>=22) chips.push(['🥵','Muggy — light, breathable fabrics']);
+  if (hum!=null && hum>=85 && actual<10)  chips.push(['🧥','Damp cold — wind/waterproof layer']);
+  if (hum!=null && hum<=30 && actual>=10) chips.push(['🧴','Dry air — moisturiser & lip balm']);
   // cold extras
   if (feels<3)  chips.push(['🧣','Scarf & hat']);
   if (feels<1)  chips.push(['🧤','Gloves']);
   if (feels<13 && feels>=7) chips.push(['🧶','A jumper underneath']);
   // warm extras
   if (feels>=27) chips.push(['💧','Carry water']);
-  if (feels>=31) chips.push(['🥵','Avoid the midday sun']);
+  if (feels>=31) chips.push(['☀️','Avoid the midday sun']);
   // rain / snow
   if (wet)      chips.push(['☂️','Umbrella']);
   if (wet && wind>=25) chips.push(['🧥','Hooded / waterproof coat']);
@@ -1026,12 +1139,15 @@ function renderWear(d){
   if (uv>=6)    chips.push(['🧴','Sunscreen']);
   if (uv>=8)    chips.push(['🧢','Hat or cap']);
   // wind
-  if (wind>=35) chips.push(['💨','Windproof layer']);
+  if (wind>=35) chips.push(['🌬️','Windproof layer']);
   // big day/night swing
   if (swing>=12) chips.push(['🌗','Dress in layers — big day/night swing']);
   // pleasant day
   if (!wet && feels>=16 && feels<=26 && wind<25) chips.push(['🚶','Lovely for a walk']);
-  document.getElementById('wearBody').innerHTML=chips.map(([e,t])=>`<span class="wear-chip"><span class="wc-emoji">${e}</span>${t}</span>`).join('');
+  const note=`Feels like <b>${Math.round(feels)}°</b>${diff>=2?` (${diff}° colder than the actual ${Math.round(actual)}° — wind`+(hum!=null&&hum>=70?' & humidity':'')+`)`:diff<=-2?` (warmer than ${Math.round(actual)}° — humidity)`:''}.`;
+  document.getElementById('wearBody').innerHTML=
+    `<p class="wear-note">${note}</p>`+
+    chips.map(([e,t])=>`<span class="wear-chip"><span class="wc-emoji">${e}</span>${t}</span>`).join('');
 }
 
 // ── AUTOCOMPLETE ─────────────────────────────────────────────────
@@ -1186,6 +1302,8 @@ async function loadWeather(lat, lon, label) {
     setupMonth();
     fetchHistorical();   // auto-show the last 5 years for today
     fetchAir(lat, lon);
+    // if the past-month overview is already showing, refresh it for the new city
+    if (!document.getElementById('moResults').classList.contains('hidden')) fetchMonth();
     try { localStorage.setItem('skycast-last', JSON.stringify({lat, lon, label})); } catch(e){}
   } catch(e) {
     let msg='Could not load weather data.', hint='';
@@ -1250,6 +1368,8 @@ function renderWeather(d) {
   // Stargazing tonight (clouds + moon) + what-to-wear advice
   renderStargazing(d, start);
   renderWear(d);
+  // If the Live theme is active, sync its background to the new weather
+  if (document.documentElement.getAttribute('data-theme')==='live') setLiveMode(liveModeFor(cur.weather_code, cur.is_day));
 
   // HOURLY — next 24h starting from the location's current hour (not the browser's)
   const scroll=document.getElementById('hourlyScroll'); scroll.innerHTML='';
