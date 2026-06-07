@@ -263,7 +263,9 @@ body::before {
 .wr-temps .lo { color: var(--muted); margin-left: 5px; }
 
 /* DAY DETAIL */
-.day-detail { background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px; margin-top: 6px; animation: fadeUp 0.2s ease; }
+.day-detail { overflow: hidden; height: 0; opacity: 0; transition: height 1.3s cubic-bezier(.4,0,.2,1), opacity 1.1s ease; }
+.day-detail.open { opacity: 1; }
+.dd-inner { background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius); padding: 16px; margin-top: 6px; }
 .day-detail-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 12px; }
 .dd-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
 @media(min-width:480px) { .dd-grid { grid-template-columns: repeat(4,1fr); } }
@@ -810,9 +812,11 @@ function dayChart(hourly, dateStr){
       +`<br><b>${Math.round(temp[i])}°</b> actual`
       +(haveFeels&&feels[i]!=null?` · <span class="t-feels">${Math.round(feels[i])}° feels</span>`:'')
       +(prob[i]>0?`<br><span class="t-rain">☂ ${prob[i]}% rain</span>`:'');
-    // position tip over the cursor, clamped inside the chart
-    const pct=xi/W*100;
-    tip.style.left=Math.max(16,Math.min(84,pct))+'%';
+    // position the tip in pixels, clamped so it never gets cut off at the edges
+    const cw=svg.getBoundingClientRect().width||wrap.clientWidth;
+    const px=xi/W*cw, tw=tip.offsetWidth;
+    tip.style.transform='none';
+    tip.style.left=Math.max(0, Math.min(cw-tw, px-tw/2))+'px';
   }
   function fromEvent(e){
     const r=svg.getBoundingClientRect();
@@ -876,40 +880,45 @@ function dewNow(){
 }
 
 // Hour-by-hour rain graph for the rest of today (probability + amount).
+// Window for the rain/UV popups: today 00:00 → ~10:00 next day (day + night + next morning)
+function graphWindow(H){
+  const today=(WX.current.time||H.time[0]).slice(0,10);
+  let start=H.time.findIndex(t=>t.startsWith(today)); if(start<0)start=0;
+  const idx=[]; for(let i=start;i<Math.min(start+35,H.time.length);i++) idx.push(i);
+  return idx;
+}
+// after opening, scroll the chart so the 08:00–20:00 range is in view first
+function scrollGraphTo08(n){
+  requestAnimationFrame(()=>{ const el=document.querySelector('#modalBody .chart-scroll'); if(!el) return;
+    const W=Math.max(n*30,320), bw=(W-48)/n; el.scrollLeft=Math.max(0, 24+8*bw-10); });
+}
 function openRainGraph(){
   if (!WX) return;
-  const H=WX.hourly, today=(WX.current.time||H.time[0]).slice(0,10);
-  const labels=[], probs=[], amts=[];
-  for (let i=0;i<H.time.length;i++){
-    if (!H.time[i].startsWith(today)) continue;
-    labels.push(H.time[i].slice(11,16));
-    probs.push(H.precipitation_probability[i]??0);
-    amts.push(+(H.precipitation[i]??0).toFixed(1));
-  }
-  const totalRain=amts.reduce((s,v)=>s+v,0).toFixed(1);
-  let html=`<p class="modal-note">Chance of rain per hour today · expected total <b>${totalRain} mm</b></p>`;
+  const H=WX.hourly, idx=graphWindow(H);
+  const labels=idx.map(i=>H.time[i].slice(11,16));
+  const probs=idx.map(i=>H.precipitation_probability[i]??0);
+  const totalRain=idx.reduce((s,i)=>s+(+(H.precipitation[i]??0)),0).toFixed(1);
+  let html=`<p class="modal-note">Chance of rain per hour · today into tomorrow morning · expected total <b>${totalRain} mm</b></p>`;
   html+='<div class="chart-scroll">'+barChart(labels, probs, {unit:'%', max:100})+'</div>';
-  html+='<p class="pollen-disc">Bars show hourly probability of precipitation (≥0.1 mm).</p>';
+  html+='<p class="pollen-disc">Starts at the daytime hours — scroll right for the evening, night and next morning.</p>';
   openModal('Rain — hour by hour', html);
+  scrollGraphTo08(labels.length);
 }
 
-// Hourly UV curve for today + peak and approximate burn time.
+// Hourly UV curve (today into next morning) + peak and approximate burn time.
 function openUvGraph(){
   if (!WX) return;
-  const H=WX.hourly, today=(WX.current.time||H.time[0]).slice(0,10);
-  const labels=[], uvs=[]; let peak=0, peakAt='';
-  for (let i=0;i<H.time.length;i++){
-    if (!H.time[i].startsWith(today)) continue;
-    const uv=+(H.uv_index[i]??0).toFixed(1);
-    labels.push(H.time[i].slice(11,16)); uvs.push(uv);
-    if (uv>peak){ peak=uv; peakAt=H.time[i].slice(11,16); }
-  }
+  const H=WX.hourly, idx=graphWindow(H);
+  const labels=idx.map(i=>H.time[i].slice(11,16));
+  const uvs=idx.map(i=>+(H.uv_index[i]??0).toFixed(1));
+  let peak=0, peakAt=''; uvs.forEach((uv,k)=>{ if(uv>peak){ peak=uv; peakAt=labels[k]; } });
   const cat=uvCategory(peak), bm=burnMinutes(peak);
-  let html=`<p class="modal-note">Peak UV today <b>${peak.toFixed(1)}</b> <span class="pollen-pill ${cat.cls}">${cat.label}</span> around <b>${peakAt||'—'}</b></p>`;
+  let html=`<p class="modal-note">Peak UV <b>${peak.toFixed(1)}</b> <span class="pollen-pill ${cat.cls}">${cat.label}</span> around <b>${peakAt||'—'}</b></p>`;
   if (bm) html+=`<p class="modal-note">At peak, fair skin can start to burn in about <b>${bm} min</b> without protection.</p>`;
   html+='<div class="chart-scroll">'+barChart(labels, uvs, {unit:'', max:Math.max(11,peak)})+'</div>';
   html+='<p class="pollen-disc">Burn time is approximate (skin type II). Darker skin tones take ~2–4× longer.</p>';
   openModal('UV index — hour by hour', html);
+  scrollGraphTo08(labels.length);
 }
 
 // Stargazing tonight: clearer skies + dimmer moon = better.
@@ -1516,8 +1525,8 @@ function renderWeather(d) {
       <div class="wr-icon">${ic.i}</div>
       <div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%"></div></div>
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
-    const detail=document.createElement('div'); detail.className='day-detail hidden';
-    detail.innerHTML=`<div class="day-detail-title">${name} · ${dlbl} · ${ic.d}</div>
+    const detail=document.createElement('div'); detail.className='day-detail';
+    detail.innerHTML=`<div class="dd-inner"><div class="day-detail-title">${name} · ${dlbl} · ${ic.d}</div>
       <div class="dd-chart-wrap"></div>
       <div class="dd-subtitle">Details</div>
       <div class="dd-grid">
@@ -1532,16 +1541,32 @@ function renderWeather(d) {
         <div class="dd-box"><div class="dd-label">UV Index</div><div class="dd-val" style="color:var(--accent2)">${days.uv_index_max[i]}</div></div>
         <div class="dd-box"><div class="dd-label">Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
         <div class="dd-box"><div class="dd-label">Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
-      </div>`;
+      </div></div>`;
     const chartWrap=detail.querySelector('.dd-chart-wrap');
+    function expand(){
+      if (!chartWrap.dataset.built){ chartWrap.appendChild(dayChart(d.hourly, dateStr)); chartWrap.dataset.built='1'; }
+      detail.classList.add('open'); row.classList.add('active');
+      detail.style.height='0px'; detail.offsetHeight;                 // start point
+      detail.style.height=detail.scrollHeight+'px';                   // animate open
+      clearTimeout(detail._ht); detail._ht=setTimeout(()=>{ if(detail.classList.contains('open')) detail.style.height='auto'; }, 1350);
+    }
+    function collapse(el){
+      el.style.height=el.scrollHeight+'px'; el.offsetHeight;          // fix current height
+      el.classList.remove('open');
+      requestAnimationFrame(()=>{ el.style.height='0px'; });          // animate closed
+    }
+    detail._collapse=collapse;
     row.addEventListener('click',()=>{
-      wkGrid.querySelectorAll('.day-detail').forEach(x=>{if(x!==detail)x.classList.add('hidden');});
-      wkGrid.querySelectorAll('.week-row').forEach(x=>{if(x!==row)x.classList.remove('active');});
-      detail.classList.toggle('hidden');
-      const open=!detail.classList.contains('hidden');
-      row.classList.toggle('active',open);
-      if (open && !chartWrap.dataset.built){ chartWrap.appendChild(dayChart(d.hourly, dateStr)); chartWrap.dataset.built='1'; }
-      if (open) setTimeout(()=>row.scrollIntoView({behavior:'smooth', block:'center'}), 90);
+      if (detail.classList.contains('open')){ collapse(detail); row.classList.remove('active'); return; }
+      // close any other open day (animated), then centre this one, then open it
+      const others=[...wkGrid.querySelectorAll('.day-detail.open')];
+      others.forEach(x=>{ x._collapse(x); });
+      wkGrid.querySelectorAll('.week-row').forEach(x=>x.classList.remove('active'));
+      const wait = others.length ? 1150 : 60;                          // wait for the close to finish
+      setTimeout(()=>{
+        row.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(expand, 480);                                       // open after the centre scroll
+      }, wait);
     });
     const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
     (i>=7 && farBox ? farBox : wkGrid).appendChild(wrap);
