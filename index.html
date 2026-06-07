@@ -271,7 +271,16 @@ body::before {
 .dd-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
 .dd-val { font-size: 13px; font-weight: 500; }
 .dd-subtitle { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent3); margin: 16px 0 8px; }
-.dd-chart svg { width: 100%; height: auto; display: block; }
+.dd-chart { position: relative; }
+.dd-chart svg { width: 100%; height: auto; display: block; touch-action: none; cursor: crosshair; }
+.dd-chart .cursor-line { stroke: var(--accent); stroke-width: 1; opacity: 0.55; stroke-dasharray: 3 3; }
+.dd-chart .cursor-dot { fill: var(--accent); }
+.dd-chart .cursor-dot2 { fill: var(--accent2); }
+.dd-tip { position: absolute; top: 2px; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; font-size: 10px; line-height: 1.4; white-space: nowrap; pointer-events: none; z-index: 2; backdrop-filter: blur(6px); }
+.dd-tip .t-h { color: var(--muted); }
+.dd-tip b { color: var(--text); font-weight: 600; }
+.dd-tip .t-feels { color: var(--accent2); }
+.dd-tip .t-rain { color: var(--accent3); }
 .dd-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10px; color: var(--muted); margin-top: 6px; }
 .dd-legend i { display: inline-block; width: 11px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
 
@@ -730,11 +739,13 @@ function barChart(labels, values, opts={}){
     + `<text x="4" y="12" font-size="9" fill="var(--muted)">${max}${opts.unit||''}</text>${bars}${vals}${axis}</svg>`;
 }
 
-// Per-day hour-by-hour chart that scales to the card width (no scroll):
-// icons on top, temp + feels value rows, rain % as a row BELOW the graph.
+// Interactive per-day chart (returns a DOM element):
+// temperature y-axis (min/mid/max), icons on top, drag/scrub to read the exact
+// hour — actual + feels-like + icon + rain — like iPhone Weather.
 function dayChart(hourly, dateStr){
+  const wrap=document.createElement('div'); wrap.className='dd-chart';
   const idx=[]; for(let k=0;k<hourly.time.length;k++) if(hourly.time[k].startsWith(dateStr)) idx.push(k);
-  if(!idx.length) return '<p class="pollen-note">No hourly data for this day.</p>';
+  if(!idx.length){ wrap.innerHTML='<p class="pollen-note">No hourly data for this day.</p>'; return wrap; }
   const n=idx.length;
   const temp=idx.map(k=>hourly.temperature_2m[k]);
   const feels=idx.map(k=>hourly.apparent_temperature?hourly.apparent_temperature[k]:null);
@@ -743,43 +754,69 @@ function dayChart(hourly, dateStr){
   const isday=idx.map(k=>hourly.is_day[k]);
   const hrs=idx.map(k=>+hourly.time[k].slice(11,13));
   const haveFeels=feels.some(v=>v!=null);
-  const step=n>=18?2:1;                       // label every 2 hours for clarity
-  const W=340,H=192,L=12,R=12;
-  const iconsY=15, plotTop=60, plotBot=H-48, hoursY=H-28, rainY=H-9;
+  const W=360,H=216,L=30,R=14,plotTop=52,plotBot=H-26;
   const allT=temp.concat(haveFeels?feels.filter(v=>v!=null):[]);
-  let tMin=Math.min(...allT), tMax=Math.max(...allT); if(tMin===tMax){tMin-=1;tMax+=1;}
+  let tMin=Math.floor(Math.min(...allT)-1), tMax=Math.ceil(Math.max(...allT)+1); if(tMin===tMax)tMax++;
   const x=i=> L+(W-L-R)*(n<=1?0.5:i/(n-1));
   const y=t=> plotTop+(plotBot-plotTop)*(1-(t-tMin)/(tMax-tMin));
+  // y grid + temperature axis labels
+  let grid='';
+  for(let g=0;g<=4;g++){ const tv=tMin+(tMax-tMin)*g/4, yy=y(tv);
+    grid+=`<line x1="${L}" y1="${yy.toFixed(1)}" x2="${W-R}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="0.5" opacity="0.45"/>`
+        +`<text x="${L-6}" y="${(yy+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--muted)">${Math.round(tv)}°</text>`; }
   // night shading
   let shade='',s=null;
   for(let i=0;i<=n;i++){ const night=i<n&&isday[i]===0;
     if(night&&s===null) s=i;
     if((!night||i===n)&&s!==null){ const x0=x(Math.max(s-0.5,0)),x1=x(Math.min(i-0.5,n-1));
       shade+=`<rect x="${x0.toFixed(1)}" y="${plotTop}" width="${Math.max(x1-x0,0).toFixed(1)}" height="${plotBot-plotTop}" fill="rgba(120,140,180,0.10)"/>`; s=null; } }
-  // temp area + line
+  // temp area + line, feels dashed
   const pts=temp.map((t,i)=>x(i).toFixed(1)+' '+y(t).toFixed(1));
   const area=`M${x(0).toFixed(1)} ${plotBot} L`+pts.join(' L')+` L${x(n-1).toFixed(1)} ${plotBot} Z`;
   const line='M'+pts.join(' L');
   let fline=''; if(haveFeels){ feels.forEach((t,i)=>{ if(t==null)return; fline+=(fline?' L':'M')+x(i).toFixed(1)+' '+y(t).toFixed(1); }); }
-  // per-step: icon (top); feels-like in parentheses above the actual temp; hour & rain rows below
-  let icons='',dots='',tlab='',hours='',rrow='';
-  for(let i=0;i<n;i+=step){
-    const xi=x(i).toFixed(1), ty=y(temp[i]);
-    icons+=`<text x="${xi}" y="${iconsY}" text-anchor="middle" font-size="14">${wc(code[i],isday[i]).i}</text>`;
-    dots +=`<circle cx="${xi}" cy="${ty.toFixed(1)}" r="2" fill="var(--accent)"/>`;
-    if(haveFeels&&feels[i]!=null) tlab+=`<text x="${xi}" y="${(ty-17).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="var(--accent2)">(${Math.round(feels[i])}°)</text>`;
-    tlab +=`<text x="${xi}" y="${(ty-6).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="500" fill="var(--text)">${Math.round(temp[i])}°</text>`;
-    hours+=`<text x="${xi}" y="${hoursY}" text-anchor="middle" font-size="10" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`;
-    rrow+=`<text x="${xi}" y="${rainY}" text-anchor="middle" font-size="10" fill="var(--accent3)">${prob[i]>0?prob[i]+'%':'·'}</text>`;
-  }
-  const rowTags=`<text x="0" y="${rainY}" font-size="7" fill="var(--accent3)">☂</text>`;
-  const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>(feels like)</span>':''}<span><i style="background:var(--accent3)"></i>Rain % ☂</span></div>`;
-  return `<div class="dd-chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">`
+  // top icons + bottom hour labels every 3h
+  let icons='',hoursL='';
+  for(let i=0;i<n;i+=3){ icons+=`<text x="${x(i).toFixed(1)}" y="16" text-anchor="middle" font-size="14">${wc(code[i],isday[i]).i}</text>`;
+    hoursL+=`<text x="${x(i).toFixed(1)}" y="${H-9}" text-anchor="middle" font-size="9" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`; }
+  const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>Feels like</span>':''}<span>drag the graph for any hour ›</span></div>`;
+  wrap.innerHTML=`<div class="dd-tip"></div><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`
     +`<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0.30"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
-    +shade
+    +grid+shade
     +`<path d="${area}" fill="url(#tg)"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`
     +(haveFeels?`<path d="${fline}" fill="none" stroke="var(--accent2)" stroke-width="1.4" stroke-dasharray="4 3"/>`:'')
-    +dots+icons+tlab+hours+rrow+rowTags+`</svg>`+legend+`</div>`;
+    +`<line class="cursor-line" x1="0" y1="${plotTop}" x2="0" y2="${plotBot}"/><circle class="cursor-dot" r="3.5"/>${haveFeels?'<circle class="cursor-dot2" r="3"/>':''}`
+    +icons+hoursL+`</svg>`+legend;
+  // ── interactivity ──
+  const svg=wrap.querySelector('svg'), tip=wrap.querySelector('.dd-tip');
+  const cl=wrap.querySelector('.cursor-line'), cd=wrap.querySelector('.cursor-dot'), cd2=wrap.querySelector('.cursor-dot2');
+  function select(i){
+    i=Math.max(0,Math.min(n-1,i));
+    const xi=x(i);
+    cl.setAttribute('x1',xi); cl.setAttribute('x2',xi);
+    cd.setAttribute('cx',xi); cd.setAttribute('cy',y(temp[i]));
+    if(cd2&&feels[i]!=null){ cd2.setAttribute('cx',xi); cd2.setAttribute('cy',y(feels[i])); cd2.style.display=''; } else if(cd2){ cd2.style.display='none'; }
+    tip.innerHTML=`<span class="t-h">${String(hrs[i]).padStart(2,'0')}:00</span> ${wc(code[i],isday[i]).i}`
+      +`<br><b>${Math.round(temp[i])}°</b> actual`
+      +(haveFeels&&feels[i]!=null?` · <span class="t-feels">${Math.round(feels[i])}° feels</span>`:'')
+      +(prob[i]>0?`<br><span class="t-rain">☂ ${prob[i]}% rain</span>`:'');
+    // position tip over the cursor, clamped inside the chart
+    const pct=xi/W*100;
+    tip.style.left=Math.max(16,Math.min(84,pct))+'%';
+  }
+  function fromEvent(e){
+    const r=svg.getBoundingClientRect();
+    const vx=(e.clientX-r.left)/r.width*W;
+    let i=Math.round((vx-L)/(W-L-R)*(n-1));
+    select(Math.round(i/2)*2);                 // snap to 2-hour steps
+  }
+  svg.addEventListener('pointerdown',e=>{ e.preventDefault(); svg.setPointerCapture&&svg.setPointerCapture(e.pointerId); fromEvent(e); });
+  svg.addEventListener('pointermove',e=>{ if(e.pointerType==='mouse'&&!e.buttons){ fromEvent(e); return; } if(e.buttons||e.pointerType!=='mouse'){ e.preventDefault(); fromEvent(e); } });
+  // default: current hour for today, else midday
+  let def=hrs.indexOf(12); if(def<0)def=Math.floor(n/2);
+  if(WX&&WX.current&&WX.current.time&&WX.current.time.slice(0,10)===dateStr){ const ch=hrs.indexOf(+WX.current.time.slice(11,13)); if(ch>=0)def=ch; }
+  select(Math.round(def/2)*2);
+  return wrap;
 }
 
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
@@ -1467,6 +1504,8 @@ function renderWeather(d) {
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
     const detail=document.createElement('div'); detail.className='day-detail hidden';
     detail.innerHTML=`<div class="day-detail-title">${name} · ${dlbl} · ${ic.d}</div>
+      <div class="dd-chart-wrap"></div>
+      <div class="dd-subtitle">Details</div>
       <div class="dd-grid">
         <div class="dd-box"><div class="dd-label">High</div><div class="dd-val" style="color:var(--accent)">${T(hi)}</div></div>
         <div class="dd-box"><div class="dd-label">Low</div><div class="dd-val" style="color:var(--accent3)">${T(lo)}</div></div>
@@ -1479,9 +1518,7 @@ function renderWeather(d) {
         <div class="dd-box"><div class="dd-label">UV Index</div><div class="dd-val" style="color:var(--accent2)">${days.uv_index_max[i]}</div></div>
         <div class="dd-box"><div class="dd-label">Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
         <div class="dd-box"><div class="dd-label">Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
-      </div>
-      <div class="dd-subtitle">Hour by hour</div>
-      <div class="dd-chart-wrap"></div>`;
+      </div>`;
     const chartWrap=detail.querySelector('.dd-chart-wrap');
     row.addEventListener('click',()=>{
       wkGrid.querySelectorAll('.day-detail').forEach(x=>{if(x!==detail)x.classList.add('hidden');});
@@ -1489,7 +1526,7 @@ function renderWeather(d) {
       detail.classList.toggle('hidden');
       const open=!detail.classList.contains('hidden');
       row.classList.toggle('active',open);
-      if (open && !chartWrap.dataset.built){ chartWrap.innerHTML=dayChart(d.hourly, dateStr); chartWrap.dataset.built='1'; }
+      if (open && !chartWrap.dataset.built){ chartWrap.appendChild(dayChart(d.hourly, dateStr)); chartWrap.dataset.built='1'; }
     });
     const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
     (i>=7 && farBox ? farBox : wkGrid).appendChild(wrap);
