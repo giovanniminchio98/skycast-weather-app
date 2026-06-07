@@ -812,9 +812,11 @@ function dayChart(hourly, dateStr){
       +`<br><b>${Math.round(temp[i])}°</b> actual`
       +(haveFeels&&feels[i]!=null?` · <span class="t-feels">${Math.round(feels[i])}° feels</span>`:'')
       +(prob[i]>0?`<br><span class="t-rain">☂ ${prob[i]}% rain</span>`:'');
-    // position tip over the cursor, clamped inside the chart
-    const pct=xi/W*100;
-    tip.style.left=Math.max(16,Math.min(84,pct))+'%';
+    // position the tip in pixels, clamped so it never gets cut off at the edges
+    const cw=svg.getBoundingClientRect().width||wrap.clientWidth;
+    const px=xi/W*cw, tw=tip.offsetWidth;
+    tip.style.transform='none';
+    tip.style.left=Math.max(0, Math.min(cw-tw, px-tw/2))+'px';
   }
   function fromEvent(e){
     const r=svg.getBoundingClientRect();
@@ -878,40 +880,45 @@ function dewNow(){
 }
 
 // Hour-by-hour rain graph for the rest of today (probability + amount).
+// Window for the rain/UV popups: today 00:00 → ~10:00 next day (day + night + next morning)
+function graphWindow(H){
+  const today=(WX.current.time||H.time[0]).slice(0,10);
+  let start=H.time.findIndex(t=>t.startsWith(today)); if(start<0)start=0;
+  const idx=[]; for(let i=start;i<Math.min(start+35,H.time.length);i++) idx.push(i);
+  return idx;
+}
+// after opening, scroll the chart so the 08:00–20:00 range is in view first
+function scrollGraphTo08(n){
+  requestAnimationFrame(()=>{ const el=document.querySelector('#modalBody .chart-scroll'); if(!el) return;
+    const W=Math.max(n*30,320), bw=(W-48)/n; el.scrollLeft=Math.max(0, 24+8*bw-10); });
+}
 function openRainGraph(){
   if (!WX) return;
-  const H=WX.hourly, today=(WX.current.time||H.time[0]).slice(0,10);
-  const labels=[], probs=[], amts=[];
-  for (let i=0;i<H.time.length;i++){
-    if (!H.time[i].startsWith(today)) continue;
-    labels.push(H.time[i].slice(11,16));
-    probs.push(H.precipitation_probability[i]??0);
-    amts.push(+(H.precipitation[i]??0).toFixed(1));
-  }
-  const totalRain=amts.reduce((s,v)=>s+v,0).toFixed(1);
-  let html=`<p class="modal-note">Chance of rain per hour today · expected total <b>${totalRain} mm</b></p>`;
+  const H=WX.hourly, idx=graphWindow(H);
+  const labels=idx.map(i=>H.time[i].slice(11,16));
+  const probs=idx.map(i=>H.precipitation_probability[i]??0);
+  const totalRain=idx.reduce((s,i)=>s+(+(H.precipitation[i]??0)),0).toFixed(1);
+  let html=`<p class="modal-note">Chance of rain per hour · today into tomorrow morning · expected total <b>${totalRain} mm</b></p>`;
   html+='<div class="chart-scroll">'+barChart(labels, probs, {unit:'%', max:100})+'</div>';
-  html+='<p class="pollen-disc">Bars show hourly probability of precipitation (≥0.1 mm).</p>';
+  html+='<p class="pollen-disc">Starts at the daytime hours — scroll right for the evening, night and next morning.</p>';
   openModal('Rain — hour by hour', html);
+  scrollGraphTo08(labels.length);
 }
 
-// Hourly UV curve for today + peak and approximate burn time.
+// Hourly UV curve (today into next morning) + peak and approximate burn time.
 function openUvGraph(){
   if (!WX) return;
-  const H=WX.hourly, today=(WX.current.time||H.time[0]).slice(0,10);
-  const labels=[], uvs=[]; let peak=0, peakAt='';
-  for (let i=0;i<H.time.length;i++){
-    if (!H.time[i].startsWith(today)) continue;
-    const uv=+(H.uv_index[i]??0).toFixed(1);
-    labels.push(H.time[i].slice(11,16)); uvs.push(uv);
-    if (uv>peak){ peak=uv; peakAt=H.time[i].slice(11,16); }
-  }
+  const H=WX.hourly, idx=graphWindow(H);
+  const labels=idx.map(i=>H.time[i].slice(11,16));
+  const uvs=idx.map(i=>+(H.uv_index[i]??0).toFixed(1));
+  let peak=0, peakAt=''; uvs.forEach((uv,k)=>{ if(uv>peak){ peak=uv; peakAt=labels[k]; } });
   const cat=uvCategory(peak), bm=burnMinutes(peak);
-  let html=`<p class="modal-note">Peak UV today <b>${peak.toFixed(1)}</b> <span class="pollen-pill ${cat.cls}">${cat.label}</span> around <b>${peakAt||'—'}</b></p>`;
+  let html=`<p class="modal-note">Peak UV <b>${peak.toFixed(1)}</b> <span class="pollen-pill ${cat.cls}">${cat.label}</span> around <b>${peakAt||'—'}</b></p>`;
   if (bm) html+=`<p class="modal-note">At peak, fair skin can start to burn in about <b>${bm} min</b> without protection.</p>`;
   html+='<div class="chart-scroll">'+barChart(labels, uvs, {unit:'', max:Math.max(11,peak)})+'</div>';
   html+='<p class="pollen-disc">Burn time is approximate (skin type II). Darker skin tones take ~2–4× longer.</p>';
   openModal('UV index — hour by hour', html);
+  scrollGraphTo08(labels.length);
 }
 
 // Stargazing tonight: clearer skies + dimmer moon = better.
