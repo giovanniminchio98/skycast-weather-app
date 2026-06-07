@@ -276,8 +276,9 @@ body::before {
 .dd-chart .cursor-line { stroke: var(--accent); stroke-width: 1; opacity: 0.55; stroke-dasharray: 3 3; }
 .dd-chart .cursor-dot { fill: var(--accent); }
 .dd-chart .cursor-dot2 { fill: var(--accent2); }
-.dd-tip { position: absolute; top: 2px; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; font-size: 10px; line-height: 1.4; white-space: nowrap; pointer-events: none; z-index: 2; backdrop-filter: blur(6px); }
+.dd-tip { position: absolute; top: 2px; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 7px 12px; font-size: 14px; line-height: 1.45; white-space: nowrap; pointer-events: none; z-index: 2; backdrop-filter: blur(6px); }
 .dd-tip .t-h { color: var(--muted); }
+.dd-tip .t-ico { font-size: 20px; vertical-align: middle; }
 .dd-tip b { color: var(--text); font-weight: 600; }
 .dd-tip .t-feels { color: var(--accent2); }
 .dd-tip .t-rain { color: var(--accent3); }
@@ -796,7 +797,7 @@ function dayChart(hourly, dateStr){
     cl.setAttribute('x1',xi); cl.setAttribute('x2',xi);
     cd.setAttribute('cx',xi); cd.setAttribute('cy',y(temp[i]));
     if(cd2&&feels[i]!=null){ cd2.setAttribute('cx',xi); cd2.setAttribute('cy',y(feels[i])); cd2.style.display=''; } else if(cd2){ cd2.style.display='none'; }
-    tip.innerHTML=`<span class="t-h">${String(hrs[i]).padStart(2,'0')}:00</span> ${wc(code[i],isday[i]).i}`
+    tip.innerHTML=`<span class="t-h">${String(hrs[i]).padStart(2,'0')}:00</span> <span class="t-ico">${wc(code[i],isday[i]).i}</span>`
       +`<br><b>${Math.round(temp[i])}°</b> actual`
       +(haveFeels&&feels[i]!=null?` · <span class="t-feels">${Math.round(feels[i])}° feels</span>`:'')
       +(prob[i]>0?`<br><span class="t-rain">☂ ${prob[i]}% rain</span>`:'');
