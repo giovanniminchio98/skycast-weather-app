@@ -14,12 +14,15 @@
 <link rel="manifest" href="manifest.json">
 <script>try{var t=localStorage.getItem('skycast-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ════════════════ THEMES ════════════════
-   Three palettes selected via [data-theme] on <html>:
+   Palettes selected via [data-theme] on <html>:
    · current    – the original dark / lime editorial look (default)
+   · minimal    – super-minimalist light monochrome
    · futuristic – neon cyan + magenta glassmorphism
-   · ai         – "Neural" purple/pink, animated node-network background  */
+   · ai         – "Neural" teal/blue AI-entity look + live synapse canvas  */
 
 :root[data-theme="current"] {
   --bg:#0e0e0e; --surface:#161616; --card:#1c1c1c; --border:#2a2a2a;
@@ -27,6 +30,13 @@
   --text:#f0ede8; --muted:#888; --bull:#c8f060; --bear:#ff6b6b;
   --accent-rgb:200,240,96; --accent3-rgb:96,200,240;
   --radius:16px; --display:'DM Serif Display'; --card-blur:0px;
+}
+:root[data-theme="minimal"] {
+  --bg:#f6f6f4; --surface:#ffffff; --card:#ffffff; --border:#e7e7e3;
+  --accent:#141414; --accent2:#5a5a5a; --accent3:#7a7a7a;
+  --text:#141414; --muted:#9a9a96; --bull:#141414; --bear:#c0392b;
+  --accent-rgb:20,20,20; --accent3-rgb:122,122,122;
+  --radius:10px; --display:'DM Serif Display'; --card-blur:0px;
 }
 :root[data-theme="futuristic"] {
   --bg:#05070f; --surface:#0a1120; --card:rgba(18,28,52,0.55); --border:rgba(120,200,255,0.18);
@@ -36,11 +46,11 @@
   --radius:16px; --display:'DM Serif Display'; --card-blur:14px;
 }
 :root[data-theme="ai"] {
-  --bg:#07030f; --surface:#120a26; --card:rgba(32,18,60,0.5); --border:rgba(168,130,255,0.25);
-  --accent:#a855f7; --accent2:#ec4899; --accent3:#22d3ee;
-  --text:#f4ecff; --muted:#b39ddb; --bull:#a855f7; --bear:#ff6b8b;
-  --accent-rgb:168,85,247; --accent3-rgb:34,211,238;
-  --radius:18px; --display:'Orbitron'; --card-blur:16px;
+  --bg:#020809; --surface:#06141a; --card:rgba(8,26,30,0.5); --border:rgba(45,230,200,0.22);
+  --accent:#16efc6; --accent2:#38bdf8; --accent3:#5eead4;
+  --text:#e6fff8; --muted:#7fb8b0; --bull:#16efc6; --bear:#ff7a85;
+  --accent-rgb:22,239,198; --accent3-rgb:94,234,212;
+  --radius:14px; --display:'Orbitron'; --card-blur:16px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -67,15 +77,20 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-/* AI theme: living animated mesh behind everything */
+/* AI theme: deep bio-luminescent field behind the synapse canvas */
 :root[data-theme="ai"] body::before {
   background:
-    radial-gradient(ellipse 50% 45% at 15% 12%, rgba(168,85,247,0.18) 0%, transparent 55%),
-    radial-gradient(ellipse 45% 50% at 85% 20%, rgba(236,72,153,0.15) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 50% 110%, rgba(34,211,238,0.12) 0%, transparent 55%);
-  animation: aiPulse 9s ease-in-out infinite alternate;
+    radial-gradient(ellipse 55% 45% at 18% 10%, rgba(22,239,198,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 50% at 85% 22%, rgba(56,189,248,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 65% 55% at 50% 115%, rgba(22,239,198,0.08) 0%, transparent 55%);
+  animation: aiPulse 11s ease-in-out infinite alternate;
 }
-@keyframes aiPulse { from{filter:hue-rotate(0deg) brightness(1);} to{filter:hue-rotate(28deg) brightness(1.15);} }
+@keyframes aiPulse { from{opacity:0.85;} to{opacity:1;} }
+
+/* Minimal theme: flat, monochrome, no gradients/glows */
+:root[data-theme="minimal"] body::before { display: none; }
+:root[data-theme="minimal"] .brand-mark { animation: none; filter: none; }
+:root[data-theme="minimal"] .card { box-shadow: none; }
 * { position: relative; z-index: 1; }
 
 /* node-network canvas — only visible in AI theme */
@@ -200,8 +215,10 @@ body::before {
 
 /* 7-DAY */
 .week-grid { display: flex; flex-direction: column; gap: 6px; }
-.week-divider { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 12px 4px 4px; border-top: 1px dashed var(--border); margin-top: 4px; }
-.far { opacity: 0.6; }
+.longrange-toggle { width: 100%; margin-top: 8px; background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.longrange-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.longrange { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.far { opacity: 0.7; }
 .far:hover { opacity: 0.85; }
 .week-row.best { border-color: var(--accent); box-shadow: 0 0 14px -6px var(--accent); }
 .best-day { font-size: 12px; color: var(--text); background: rgba(var(--accent-rgb),0.08); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.5; }
@@ -301,6 +318,22 @@ td.rain-c { color: var(--accent3); }
 .modal-note b { color: var(--accent); }
 .chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 8px; }
 
+/* ── TABS ── */
+.tabbar { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; margin-bottom: 16px; width: fit-content; }
+.tabbar button { background: transparent; border: none; cursor: pointer; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.05em; padding: 9px 18px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+.tabbar button:hover { color: var(--text); }
+.tabbar button.active { background: var(--accent); color: var(--bg); font-weight: 500; }
+
+/* ── RAIN MAP ── */
+#mapEl { width: 100%; height: 62vh; min-height: 360px; background: #0a0a0a; }
+.map-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-top: 1px solid var(--border); }
+.map-time { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent3); }
+.map-legend { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.map-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-left: 6px; }
+.map-status { font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px; line-height: 1.6; }
+.leaflet-container { font-family: 'DM Mono', monospace; background: #0a0a0a; }
+.leaflet-control-attribution { font-size: 9px !important; }
+
 /* ── MONTH OVERVIEW (calendar) ── */
 .mo-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin-bottom: 16px; }
 .mo-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; }
@@ -350,6 +383,7 @@ td.rain-c { color: var(--accent3); }
   <div class="theme-bar">
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
       <button data-theme="current">Current</button>
+      <button data-theme="minimal">Minimal</button>
       <button data-theme="futuristic">Futuristic</button>
       <button data-theme="ai">Neural</button>
     </div>
@@ -372,6 +406,14 @@ td.rain-c { color: var(--accent3); }
     </div>
     <button class="btn-search" id="searchBtn">Search</button>
   </div>
+
+  <!-- TABS -->
+  <div class="tabbar" id="tabbar" role="tablist">
+    <button data-tab="forecast" class="active">☂ Forecast</button>
+    <button data-tab="map">🛰 Rain Map</button>
+  </div>
+
+  <div id="forecastView">
 
   <div class="error-msg hidden" id="errorMsg"></div>
 
@@ -475,7 +517,22 @@ td.rain-c { color: var(--accent3); }
 
   </div>
 
-  <div class="disclaimer">SkyCast · Open-Meteo · Forecasts are estimates · Not for safety-critical use</div>
+  </div><!-- /forecastView -->
+
+  <!-- RAIN MAP -->
+  <div id="mapView" class="hidden">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="mapEl"></div>
+      <div class="map-controls">
+        <button type="button" id="radarPlay" class="mini-btn" onclick="toggleRadar()">⏸ Pause</button>
+        <span id="mapTime" class="map-time">—</span>
+        <span class="map-legend"><i style="background:#3ad6ff"></i>light <i style="background:#2ecc71"></i>rain <i style="background:#f1c40f"></i>heavy <i style="background:#e74c3c"></i>storm</span>
+      </div>
+    </div>
+    <p id="mapStatus" class="map-status">Animated precipitation radar — past hours into the next ~30 min. Pixelated by design.</p>
+  </div>
+
+  <div class="disclaimer">SkyCast · Open-Meteo · Radar: RainViewer · Map: OpenStreetMap/CARTO</div>
 </div>
 
 <!-- POPUP / MODAL -->
@@ -738,7 +795,7 @@ function computeBestDay(days){
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
-const MODE_LABELS = { current:'Classic', futuristic:'Futuristic', ai:'⚡ AI Engine Online' };
+const MODE_LABELS = { current:'Classic', minimal:'Minimal', futuristic:'Futuristic', ai:'⚡ Neural Entity Online' };
 function setTheme(name){
   if(!MODE_LABELS[name]) name='current';
   document.documentElement.setAttribute('data-theme', name);
@@ -749,47 +806,135 @@ function setTheme(name){
 }
 document.querySelectorAll('#themeSwitch button').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
 
-// ── NEURAL CANVAS (AI theme background) ──────────────────────────
-let neuralRAF=null, nodes=[], canvas, ctx;
+// ── NEURAL CANVAS — synaptic network (AI theme) ──────────────────
+// Neurons drift slowly; nearby ones link with dendrites; signals (pulses)
+// travel along links, make the target neuron "fire" (flare) and sometimes
+// chain onward — a living neural net rather than flat dots.
+const NEURAL_D=150;
+let neuralRAF=null, nodes=[], pulses=[], canvas, ctx;
 function initNeural(){
   canvas = document.getElementById('neuralCanvas');
   ctx = canvas.getContext('2d');
   resizeNeural();
   window.addEventListener('resize', ()=>{ if(neuralRAF){ resizeNeural(); buildNodes(); } });
 }
-function resizeNeural(){ canvas.width=innerWidth; canvas.height=innerHeight; }
+function resizeNeural(){ const dpr=Math.min(devicePixelRatio||1,2); canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); }
 function buildNodes(){
-  const n = Math.min(60, Math.round(innerWidth*innerHeight/26000));
+  const n = Math.min(64, Math.round(innerWidth*innerHeight/24000));
   nodes = Array.from({length:n},()=>({
-    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
-    vx:(Math.random()-0.5)*0.35, vy:(Math.random()-0.5)*0.35
+    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    vx:(Math.random()-0.5)*0.28, vy:(Math.random()-0.5)*0.28,
+    glow:0, ph:Math.random()*Math.PI*2
   }));
+  pulses=[];
+}
+function spawnPulse(a, adj){
+  if (pulses.length>=30 || !adj[a] || !adj[a].length) return;
+  const b=adj[a][(Math.random()*adj[a].length)|0];
+  pulses.push({a, b, t:0, sp:0.012+Math.random()*0.022});
 }
 function drawNeural(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  for(const p of nodes){
-    p.x+=p.vx; p.y+=p.vy;
-    if(p.x<0||p.x>canvas.width) p.vx*=-1;
-    if(p.y<0||p.y>canvas.height) p.vy*=-1;
+  const W=innerWidth, H=innerHeight;
+  ctx.clearRect(0,0,W,H);
+  const adj=nodes.map(()=>[]);
+  for (const p of nodes){
+    p.x+=p.vx; p.y+=p.vy; p.ph+=0.02; p.glow*=0.93;
+    if (p.x<0||p.x>W) p.vx*=-1;
+    if (p.y<0||p.y>H) p.vy*=-1;
   }
-  for(let i=0;i<nodes.length;i++){
-    for(let j=i+1;j<nodes.length;j++){
+  // dendrites
+  ctx.lineWidth=1;
+  for (let i=0;i<nodes.length;i++){
+    for (let j=i+1;j<nodes.length;j++){
       const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, dist=Math.hypot(dx,dy);
-      if(dist<140){
-        ctx.strokeStyle=`rgba(168,85,247,${0.14*(1-dist/140)})`;
-        ctx.lineWidth=1; ctx.beginPath();
-        ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
+      if (dist<NEURAL_D){
+        adj[i].push(j); adj[j].push(i);
+        ctx.strokeStyle=`rgba(22,239,198,${0.10*(1-dist/NEURAL_D)})`;
+        ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
       }
     }
   }
-  for(const p of nodes){
-    ctx.fillStyle='rgba(236,72,153,0.7)';
-    ctx.beginPath(); ctx.arc(p.x,p.y,1.6,0,Math.PI*2); ctx.fill();
+  // fire a new signal occasionally
+  if (Math.random()<0.22){ spawnPulse((Math.random()*nodes.length)|0, adj); }
+  // signals travelling along dendrites
+  ctx.shadowColor='rgba(22,239,198,0.9)'; ctx.shadowBlur=10;
+  for (let k=pulses.length-1;k>=0;k--){
+    const pu=pulses[k], a=nodes[pu.a], b=nodes[pu.b];
+    pu.t+=pu.sp;
+    const x=a.x+(b.x-a.x)*pu.t, y=a.y+(b.y-a.y)*pu.t;
+    ctx.fillStyle='rgba(180,255,240,0.95)';
+    ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
+    if (pu.t>=1){ b.glow=1; pulses.splice(k,1); if (Math.random()<0.55) spawnPulse(pu.b, adj); }
   }
+  // neurons (soma) with bloom that flares when fired
+  for (const p of nodes){
+    const r=1.5+p.glow*2.4;
+    ctx.shadowBlur=6+p.glow*16;
+    ctx.fillStyle=`rgba(${94+p.glow*120},${234},${212},${0.5+0.25*Math.sin(p.ph)+p.glow*0.45})`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.shadowBlur=0;
   neuralRAF=requestAnimationFrame(drawNeural);
 }
 function startNeural(){ if(neuralRAF) return; if(!canvas) initNeural(); resizeNeural(); buildNodes(); neuralRAF=requestAnimationFrame(drawNeural); }
-function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF=null; ctx&&ctx.clearRect(0,0,canvas.width,canvas.height); } }
+function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF=null; ctx&&ctx.clearRect(0,0,innerWidth,innerHeight); } }
+
+// ── TABS ─────────────────────────────────────────────────────────
+document.querySelectorAll('#tabbar button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+function switchTab(t){
+  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  const isMap=(t==='map');
+  document.getElementById('forecastView').classList.toggle('hidden', isMap);
+  document.getElementById('mapView').classList.toggle('hidden', !isMap);
+  if (isMap) openRainMap();
+}
+
+// ── RAIN MAP — Leaflet basemap + animated RainViewer radar ───────
+let lmap=null, radarLayers=[], radarFrames=[], radarIdx=0, radarTimer=null, radarMarker=null;
+function openRainMap(){
+  if (!window.L){ document.getElementById('mapStatus').textContent='Map library failed to load — check your connection.'; return; }
+  if (!lmap){
+    lmap=L.map('mapEl',{zoomControl:true, attributionControl:true}).setView([currentLat??50.85, currentLon??4.35], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:12, attribution:'© OpenStreetMap, © CARTO'}).addTo(lmap);
+    loadRadar();
+  }
+  recenterMap();
+  setTimeout(()=>lmap && lmap.invalidateSize(), 130);
+}
+function recenterMap(){
+  if (!lmap || currentLat==null) return;
+  lmap.setView([currentLat, currentLon], lmap.getZoom()||7);
+  if (radarMarker) radarMarker.remove();
+  radarMarker=L.circleMarker([currentLat, currentLon], {radius:6, color:'#fff', weight:2, fillColor:'#16efc6', fillOpacity:0.9}).addTo(lmap);
+}
+async function loadRadar(){
+  try{
+    const c=new AbortController(); setTimeout(()=>c.abort(), 9000);
+    const d=await (await fetch('https://api.rainviewer.com/public/weather-maps.json', {signal:c.signal})).json();
+    const host=d.host, past=d.radar?.past||[], now=d.radar?.nowcast||[];
+    const frames=[...past, ...now];
+    if (!frames.length){ document.getElementById('mapStatus').textContent='No radar frames available right now.'; return; }
+    radarLayers.forEach(l=>l.remove()); radarLayers=[]; radarFrames=[];
+    frames.forEach(f=>{
+      radarFrames.push({time:f.time, future:now.includes(f)});
+      const layer=L.tileLayer(`${host}${f.path}/256/{z}/{x}/{y}/4/0_1.png`, {opacity:0, tileSize:256, zIndex:5});
+      layer.addTo(lmap); radarLayers.push(layer);
+    });
+    radarIdx=Math.max(0, past.length-1);   // start at "now"
+    showFrame(radarIdx);
+    startRadar();
+  }catch(e){ document.getElementById('mapStatus').textContent='Could not load rain radar right now.'; }
+}
+function showFrame(i){
+  radarLayers.forEach((l,j)=>l.setOpacity(j===i?0.7:0));
+  const f=radarFrames[i]; if(!f) return;
+  const hhmm=new Date(f.time*1000).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+  document.getElementById('mapTime').textContent=(f.future?'forecast ':'')+hhmm;
+}
+function startRadar(){ stopRadarTimer(); if(!radarLayers.length) return; radarTimer=setInterval(()=>{ radarIdx=(radarIdx+1)%radarLayers.length; showFrame(radarIdx); }, 700); setPlayLabel(true); }
+function stopRadarTimer(){ if(radarTimer){ clearInterval(radarTimer); radarTimer=null; } }
+function toggleRadar(){ radarTimer ? (stopRadarTimer(), setPlayLabel(false)) : startRadar(); }
+function setPlayLabel(p){ const b=document.getElementById('radarPlay'); if(b) b.textContent=p?'⏸ Pause':'▶ Play'; }
 
 // ── AUTOCOMPLETE ─────────────────────────────────────────────────
 // First edit after a city was selected: wipe the old name regardless of caret
@@ -943,6 +1088,7 @@ async function loadWeather(lat, lon, label) {
     setupMonth();
     fetchHistorical();   // auto-show the last 5 years for today
     fetchAir(lat, lon);
+    recenterMap();       // keep the rain-map centred on the chosen city
     try { localStorage.setItem('skycast-last', JSON.stringify({lat, lon, label})); } catch(e){}
   } catch(e) {
     let msg='Could not load weather data.', hint='';
@@ -1038,11 +1184,17 @@ function renderWeather(d) {
       + `wind ${W(days.wind_speed_10m_max[bestIdx])}`;
     bestEl.classList.remove('hidden');
   } else { bestEl.classList.add('hidden'); }
+  let farBox=null;   // collapsed container for the low-confidence days 8-16
   days.time.forEach((dateStr,i)=>{
-    if (i===7) {   // everything past a week is long-range / low confidence
-      const div=document.createElement('div'); div.className='week-divider';
-      div.textContent='Beyond 7 days · long-range estimate, low confidence';
-      wkGrid.appendChild(div);
+    if (i===7) {   // everything past a week is long-range / low confidence — hide it
+      const btn=document.createElement('button'); btn.type='button'; btn.className='longrange-toggle';
+      btn.textContent='▾ Show long-range days 8–16 (low confidence)';
+      farBox=document.createElement('div'); farBox.className='longrange hidden';
+      btn.addEventListener('click',()=>{
+        const hidden=farBox.classList.toggle('hidden');
+        btn.textContent=(hidden?'▾ Show':'▴ Hide')+' long-range days 8–16 (low confidence)';
+      });
+      wkGrid.appendChild(btn); wkGrid.appendChild(farBox);
     }
     const date=new Date(dateStr+'T12:00:00');
     const name=i===0?'Today':date.toLocaleDateString('en-US',{weekday:'short'});
@@ -1079,7 +1231,7 @@ function renderWeather(d) {
       row.classList.toggle('active',!detail.classList.contains('hidden'));
     });
     const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
-    wkGrid.appendChild(wrap);
+    (i>=7 && farBox ? farBox : wkGrid).appendChild(wrap);
   });
 }
 
