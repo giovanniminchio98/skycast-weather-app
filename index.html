@@ -1478,11 +1478,13 @@ function renderWeather(d) {
   // Current-hour precipitation probability — matches phone-style "rain now"
   const nowProb = d.hourly.precipitation_probability[start];
 
-  // Hero "now" icon: use the plain condition icon (sun/cloud/rain) like the
-  // 16-day forecast — not the night-moon variant, even after dark.
-  document.getElementById('todayIcon').textContent = wc(cur.weather_code).i;
+  // Hero icon: use the same whole-day summary as today's 16-day forecast row
+  // (dayIcon looks at all daylight hours) so the hero and the forecast agree —
+  // e.g. a day with rain shows rain here too, not just the current cloud.
+  const heroIc = dayIcon(d.hourly, d.daily.time[0], d.daily.weather_code[0]);
+  document.getElementById('todayIcon').textContent = heroIc.i;
   document.getElementById('todayTemp').textContent = T(cur.temperature_2m);
-  document.getElementById('todayDesc').textContent = wc(cur.weather_code, cur.is_day).d;
+  document.getElementById('todayDesc').textContent = heroIc.d;
   document.getElementById('todayHi').textContent   = T(day0.hi);
   document.getElementById('todayLo').textContent   = T(day0.lo);
   document.getElementById('sFeels').textContent = F(cur.apparent_temperature);
