@@ -225,6 +225,7 @@ body::before {
 .hour-card.now .h-time { color: var(--accent); }
 .h-icon { font-size: 1.4rem; margin-bottom: 5px; }
 .h-temp { font-size: 12px; font-weight: 500; }
+.h-feels { font-size: 9px; color: var(--muted); margin-top: 1px; }
 .h-rain { font-size: 10px; color: var(--accent3); margin-top: 3px; min-height: 13px; }
 
 /* 7-DAY */
@@ -256,6 +257,13 @@ body::before {
 .dd-box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
 .dd-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
 .dd-val { font-size: 13px; font-weight: 500; }
+.dd-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.dd-tab { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 13px; border-radius: 99px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.dd-tab.active { background: var(--accent); color: var(--bg); }
+.dd-pane.hidden { display: none; }
+.dd-chart svg { width: 100%; height: auto; display: block; }
+.dd-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10px; color: var(--muted); margin-top: 6px; }
+.dd-legend i { display: inline-block; width: 11px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
 
 /* HISTORICAL + MONTH controls */
 .hist-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
@@ -711,6 +719,57 @@ function barChart(labels, values, opts={}){
     + `<text x="4" y="12" font-size="9" fill="var(--muted)">${max}${opts.unit||''}</text>${bars}${vals}${axis}</svg>`;
 }
 
+// Per-day hour-by-hour chart that scales to the card width (no scroll):
+// temperature (line+area) + feels-like (dashed) + rain% bars + icons + night shading.
+function dayChart(hourly, dateStr, sunriseISO, sunsetISO){
+  const idx=[]; for(let k=0;k<hourly.time.length;k++) if(hourly.time[k].startsWith(dateStr)) idx.push(k);
+  if(!idx.length) return '<p class="pollen-note">No hourly data for this day.</p>';
+  const n=idx.length;
+  const temp=idx.map(k=>hourly.temperature_2m[k]);
+  const feels=idx.map(k=>hourly.apparent_temperature?hourly.apparent_temperature[k]:null);
+  const prob=idx.map(k=>hourly.precipitation_probability[k]??0);
+  const code=idx.map(k=>hourly.weather_code[k]);
+  const isday=idx.map(k=>hourly.is_day[k]);
+  const hrs=idx.map(k=>+hourly.time[k].slice(11,13));
+  const haveFeels=feels.some(v=>v!=null);
+  const W=340,H=164,L=10,R=10,Tp=22,Bp=34;
+  const allT=temp.concat(haveFeels?feels.filter(v=>v!=null):[]);
+  let tMin=Math.min(...allT), tMax=Math.max(...allT); if(tMin===tMax){tMin-=1;tMax+=1;}
+  const x=i=> L+(W-L-R)*(n<=1?0.5:i/(n-1));
+  const y=t=> Tp+(H-Tp-Bp)*(1-(t-tMin)/(tMax-tMin));
+  // night shading
+  let shade='',s=null;
+  for(let i=0;i<=n;i++){ const night=i<n&&isday[i]===0;
+    if(night&&s===null) s=i;
+    if((!night||i===n)&&s!==null){ const x0=x(Math.max(s-0.5,0)),x1=x(Math.min(i-0.5,n-1));
+      shade+=`<rect x="${x0.toFixed(1)}" y="${Tp}" width="${Math.max(x1-x0,0).toFixed(1)}" height="${H-Tp-Bp}" fill="rgba(120,140,180,0.10)"/>`; s=null; } }
+  // rain bars
+  const rb=24, rbY=H-Bp; let rain='';
+  prob.forEach((p,i)=>{ if(p>0){ const h=(p/100)*rb; rain+=`<rect x="${(x(i)-3).toFixed(1)}" y="${(rbY-h).toFixed(1)}" width="6" height="${h.toFixed(1)}" rx="1" fill="var(--accent3)" opacity="0.5"/>`;
+    if(p>=30) rain+=`<text x="${x(i).toFixed(1)}" y="${(rbY-h-2).toFixed(1)}" text-anchor="middle" font-size="6.5" fill="var(--accent3)">${p}</text>`; } });
+  // temp area + line
+  const pts=temp.map((t,i)=>x(i).toFixed(1)+' '+y(t).toFixed(1));
+  const line='M'+pts.join(' L');
+  const area=`M${x(0).toFixed(1)} ${(H-Bp).toFixed(1)} L`+pts.join(' L')+` L${x(n-1).toFixed(1)} ${(H-Bp).toFixed(1)} Z`;
+  let fline=''; if(haveFeels){ feels.forEach((t,i)=>{ if(t==null)return; fline+=(fline?' L':'M')+x(i).toFixed(1)+' '+y(t).toFixed(1); }); }
+  // icons + hour labels every 3h
+  let icons='',labels='';
+  for(let i=0;i<n;i+=3){ icons+=`<text x="${x(i).toFixed(1)}" y="15" text-anchor="middle" font-size="13">${wc(code[i],isday[i]).i}</text>`;
+    labels+=`<text x="${x(i).toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="8" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`; }
+  // hi/lo markers with values
+  const iMax=temp.indexOf(Math.max(...temp)), iMin=temp.indexOf(Math.min(...temp));
+  let marks='';
+  [iMax,iMin].forEach(mi=>{ marks+=`<circle cx="${x(mi).toFixed(1)}" cy="${y(temp[mi]).toFixed(1)}" r="2.6" fill="var(--accent)"/>`
+    +`<text x="${x(mi).toFixed(1)}" y="${(y(temp[mi])-6).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text)">${Math.round(temp[mi])}°</text>`; });
+  const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>Feels like</span>':''}<span><i style="background:var(--accent3)"></i>Rain %</span></div>`;
+  return `<div class="dd-chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">`
+    +`<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0.32"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
+    +shade+rain
+    +`<path d="${area}" fill="url(#tg)"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`
+    +(haveFeels?`<path d="${fline}" fill="none" stroke="var(--accent2)" stroke-width="1.4" stroke-dasharray="4 3"/>`:'')
+    +marks+icons+labels+`</svg>`+legend+`</div>`;
+}
+
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
 let committedCity=false, committedLabel='';   // a city is shown in the box; first keystroke replaces it
 let WX=null, histAvg=null;                     // last forecast payload + 5-yr average (for popups)
@@ -1051,7 +1110,7 @@ async function loadCities(){
     const info=wc(r.current.weather_code, r.current.is_day), tmp=Math.round(r.current.temperature_2m);
     const html=`<div class="pin"><span class="pin-emoji">${info.i}</span><span class="pin-temp">${tmp}°</span><span class="pin-name">${city.name}</span></div>`;
     L.marker([city.lat,city.lon], {icon:L.divIcon({className:'emoji-pin', html, iconSize:[46,46], iconAnchor:[23,23]})})
-      .bindPopup(`<b>${city.name}</b><br>${info.i} ${info.d} · ${tmp}°C`).addTo(euLayer);
+      .bindPopup(`<b>${city.name}</b><br>${info.i} ${info.d} · ${tmp}°C${r.current.apparent_temperature!=null?` · feels ${Math.round(r.current.apparent_temperature)}°`:''}`).addTo(euLayer);
     placed++;
   });
   updateEuZoom();
@@ -1085,7 +1144,7 @@ async function fetchCityWeather(cities){
   const results=await Promise.all(chunks.map(async ch=>{
     const lats=ch.map(c=>c.lat).join(','), lons=ch.map(c=>c.lon).join(',');
     const ac=new AbortController(); setTimeout(()=>ac.abort(), 12000);
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,apparent_temperature,weather_code,is_day&timezone=auto`;
     const data=await (await fetch(url, {signal:ac.signal})).json();
     return Array.isArray(data)?data:[data];
   }));
@@ -1384,6 +1443,7 @@ function renderWeather(d) {
     el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}${night?' <span class="h-moon">🌙</span>':''}</div>
       <div class="h-icon">${wc(code, d.hourly.is_day[i]).i}</div>
       <div class="h-temp">${T(d.hourly.temperature_2m[i])}</div>
+      <div class="h-feels">${d.hourly.apparent_temperature?'≈'+Math.round(d.hourly.apparent_temperature[i])+'°':''}</div>
       <div class="h-rain">${isWet(code)?'🌧️'+prob+'%':''}</div>`;
     scroll.appendChild(el);
   }
@@ -1429,6 +1489,11 @@ function renderWeather(d) {
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
     const detail=document.createElement('div'); detail.className='day-detail hidden';
     detail.innerHTML=`<div class="day-detail-title">${name} · ${dlbl} · ${ic.d}</div>
+      <div class="dd-tabs">
+        <button type="button" class="dd-tab active" data-v="sum">Summary</button>
+        <button type="button" class="dd-tab" data-v="hr">Hourly</button>
+      </div>
+      <div class="dd-pane" data-pane="sum">
       <div class="dd-grid">
         <div class="dd-box"><div class="dd-label">High</div><div class="dd-val" style="color:var(--accent)">${T(hi)}</div></div>
         <div class="dd-box"><div class="dd-label">Low</div><div class="dd-val" style="color:var(--accent3)">${T(lo)}</div></div>
@@ -1441,7 +1506,16 @@ function renderWeather(d) {
         <div class="dd-box"><div class="dd-label">UV Index</div><div class="dd-val" style="color:var(--accent2)">${days.uv_index_max[i]}</div></div>
         <div class="dd-box"><div class="dd-label">Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
         <div class="dd-box"><div class="dd-label">Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
-      </div>`;
+      </div>
+      </div>
+      <div class="dd-pane hidden" data-pane="hr"></div>`;
+    const hrPane=detail.querySelector('[data-pane="hr"]'), sumPane=detail.querySelector('[data-pane="sum"]');
+    detail.querySelectorAll('.dd-tab').forEach(tb=>tb.addEventListener('click',()=>{
+      detail.querySelectorAll('.dd-tab').forEach(x=>x.classList.toggle('active',x===tb));
+      const hr=tb.dataset.v==='hr';
+      sumPane.classList.toggle('hidden',hr); hrPane.classList.toggle('hidden',!hr);
+      if (hr && !hrPane.dataset.built){ hrPane.innerHTML=dayChart(d.hourly, dateStr, days.sunrise[i], days.sunset[i]); hrPane.dataset.built='1'; }
+    }));
     row.addEventListener('click',()=>{
       wkGrid.querySelectorAll('.day-detail').forEach(x=>{if(x!==detail)x.classList.add('hidden');});
       wkGrid.querySelectorAll('.week-row').forEach(x=>{if(x!==row)x.classList.remove('active');});
