@@ -13,14 +13,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <script>try{var t=localStorage.getItem('skycast-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&family=Chakra+Petch:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&family=Chakra+Petch:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ════════════════ THEMES ════════════════
    Palettes selected via [data-theme] on <html>:
    · current    – the original dark / lime editorial look (default)
-   · minimal    – super-minimalist light monochrome
+   · cyber      – sci-fi HUD: neon grid, bracketed angular cards, mono readouts
    · live        – background reflects the current weather (rain/sun/snow…)
    · ai         – "Neural" teal/blue AI-entity look + live synapse canvas  */
 
@@ -33,12 +33,13 @@
   --accent-rgb:200,240,96; --accent3-rgb:96,200,240;
   --radius:16px; --display:'DM Serif Display'; --card-blur:0px;
 }
-:root[data-theme="minimal"] {
-  --bg:#f6f6f4; --surface:#ffffff; --card:#ffffff; --border:#e7e7e3;
-  --accent:#141414; --accent2:#5a5a5a; --accent3:#7a7a7a;
-  --text:#141414; --muted:#9a9a96; --bull:#141414; --bear:#c0392b;
-  --accent-rgb:20,20,20; --accent3-rgb:122,122,122;
-  --radius:10px; --display:'DM Serif Display'; --card-blur:0px;
+:root[data-theme="cyber"] {
+  --bg:#04080f; --surface:rgba(10,22,34,0.5); --card:rgba(8,18,30,0.42); --border:rgba(25,227,255,0.30);
+  --accent:#19e3ff; --accent2:#ffb000; --accent3:#5cff9d;
+  --text:#d7f4ff; --muted:#5f8499; --bull:#5cff9d; --bear:#ff5b6e;
+  --accent-rgb:25,227,255; --accent3-rgb:92,255,157;
+  --radius:4px; --display:'Orbitron'; --card-blur:10px;
+  --font:'Share Tech Mono', monospace;
 }
 :root[data-theme="live"] {
   --bg:#1a2233; --surface:rgba(255,255,255,0.08); --card:rgba(16,22,38,0.28); --border:rgba(255,255,255,0.16);
@@ -90,10 +91,24 @@ body::before {
 }
 @keyframes aiPulse { from{opacity:0.85;} to{opacity:1;} }
 
-/* Minimal theme: flat, monochrome, no gradients/glows */
-:root[data-theme="minimal"] body::before { display: none; }
-:root[data-theme="minimal"] .brand-mark { animation: none; filter: none; }
-:root[data-theme="minimal"] .card { box-shadow: none; }
+/* ── Cyber HUD theme ── scanner grid, bracketed angular panels, neon glow */
+:root[data-theme="cyber"] body::before {
+  background:
+    linear-gradient(rgba(25,227,255,0.05) 1px, transparent 1px) 0 0/100% 42px,
+    linear-gradient(90deg, rgba(25,227,255,0.05) 1px, transparent 1px) 0 0/42px 100%,
+    radial-gradient(ellipse 70% 55% at 50% -5%, rgba(25,227,255,0.12) 0%, transparent 60%);
+}
+:root[data-theme="cyber"] .card { border: 1px solid var(--border); box-shadow: 0 0 26px -12px rgba(25,227,255,0.6); }
+:root[data-theme="cyber"] .card::before, :root[data-theme="cyber"] .card::after { content:''; position:absolute; width:14px; height:14px; pointer-events:none; z-index:2; }
+:root[data-theme="cyber"] .card::before { top:-1px; left:-1px; border-top:2px solid var(--accent); border-left:2px solid var(--accent); }
+:root[data-theme="cyber"] .card::after { bottom:-1px; right:-1px; border-bottom:2px solid var(--accent); border-right:2px solid var(--accent); }
+:root[data-theme="cyber"] .card-title { padding-left:12px; }
+:root[data-theme="cyber"] .card-title::before { content:''; position:absolute; left:0; top:1px; bottom:1px; width:3px; background:var(--accent); box-shadow:0 0 8px var(--accent); }
+:root[data-theme="cyber"] .search input, :root[data-theme="cyber"] .icon-btn, :root[data-theme="cyber"] .btn-search,
+:root[data-theme="cyber"] .unit-toggle, :root[data-theme="cyber"] .theme-switch, :root[data-theme="cyber"] .tabbar,
+:root[data-theme="cyber"] .mini-btn, :root[data-theme="cyber"] .unit-toggle button, :root[data-theme="cyber"] .theme-switch button,
+:root[data-theme="cyber"] .tabbar button { border-radius: 4px; }
+:root[data-theme="cyber"] .brand-mark { filter: drop-shadow(0 0 8px var(--accent)); }
 
 /* Live theme: background sky changes with the current weather (set via data-live);
    a scrim keeps light text readable, and #liveCanvas adds rain/snow/etc. */
@@ -231,6 +246,9 @@ body::before {
 .hourly-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .hour-card { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: center; min-width: 60px; transition: border-color 0.2s; }
 .hour-card.now { border-color: var(--accent); box-shadow: 0 0 14px -4px var(--accent); }
+.hour-card.sun { border-color: var(--accent2); background: rgba(255,255,255,0.02); justify-content: center; }
+.hour-card.sun .h-time { color: var(--accent2); }
+.hour-card.sun .h-icon { font-size: 1.6rem; margin: 7px 0; }
 .h-time { font-size: 10px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; }
 .h-moon { font-size: 9px; }
 .hour-card.now .h-time { color: var(--accent); }
@@ -348,12 +366,10 @@ td.rain-c { color: var(--accent3); }
 .mini-btn:active { opacity: 0.8; }
 
 /* ── MODAL ── */
-.modal { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,0.55); opacity: 0; transition: opacity 0.2s; padding: 0; }
+.modal { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); opacity: 0; transition: opacity 0.18s; padding: 16px; }
 .modal.show { opacity: 1; }
-@media (min-width: 600px) { .modal { align-items: center; padding: 20px; } }
-.modal-panel { background: var(--card); border: 1px solid var(--border); border-radius: 18px 18px 0 0; backdrop-filter: blur(var(--card-blur)); width: 100%; max-width: 560px; max-height: 86vh; overflow-y: auto; padding: 20px; transform: translateY(24px); transition: transform 0.25s cubic-bezier(.4,0,.2,1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5); }
+.modal-panel { background: var(--card); border: 1px solid var(--border); border-radius: 18px; backdrop-filter: blur(var(--card-blur)); width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; padding: 20px; transform: scale(0.97); transition: transform 0.18s ease; box-shadow: 0 24px 60px rgba(0,0,0,0.55); }
 .modal.show .modal-panel { transform: none; }
-@media (min-width: 600px) { .modal-panel { border-radius: 18px; } }
 .modal-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .modal-bar h3 { font-family: var(--display); font-style: italic; font-size: 20px; font-weight: 400; }
 :root[data-theme="ai"] .modal-bar h3 { font-style: normal; }
@@ -442,7 +458,7 @@ td.rain-c { color: var(--accent3); }
   <div class="theme-bar">
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
       <button data-theme="current">Current</button>
-      <button data-theme="minimal">Minimal</button>
+      <button data-theme="cyber">Cyber</button>
       <button data-theme="live">Live</button>
       <button data-theme="ai">Neural</button>
     </div>
@@ -598,7 +614,7 @@ td.rain-c { color: var(--accent3); }
 
 <!-- POPUP / MODAL -->
 <div class="modal hidden" id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-panel" role="dialog" aria-modal="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" onclick="if(!event.target.closest('.dd-chart, .chart-scroll, svg, button, a, input, select'))closeModal()">
     <div class="modal-bar">
       <h3 id="modalTitle">Details</h3>
       <button type="button" class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
@@ -859,8 +875,8 @@ function openTodayModal(){
     ['Pressure', c.surface_pressure!=null?Math.round(c.surface_pressure)+' hPa':'—'],
     ['Cloud cover', (c.cloud_cover??'—')+'%'],
     ['UV index', dy.uv_index_max[0]??'—'],
-    ['Sunrise', fmtTime(sr)],
-    ['Sunset', fmtTime(ss)],
+    ['🌄 Sunrise', fmtTime(sr)],
+    ['🌆 Sunset', fmtTime(ss)],
     ['Daylight', isFinite(daylight)?daylight.toFixed(1)+' h':'—'],
     ['Moon', moon.emoji+' '+moon.name],
   ];
@@ -921,6 +937,34 @@ function openUvGraph(){
   scrollGraphTo08(labels.length);
 }
 
+// A forecast day's interactive chart + details, shown in a centred popup.
+function openDayModal(i){
+  if (!WX) return;
+  const days=WX.daily, dateStr=days.time[i];
+  const date=new Date(dateStr+'T12:00:00');
+  const name=i===0?'Today':date.toLocaleDateString('en-US',{weekday:'long'});
+  const dlbl=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const ic=dayIcon(WX.hourly, dateStr, days.weather_code[i]);
+  const hi=days.temperature_2m_max[i], lo=days.temperature_2m_min[i];
+  const rainP=days.precipitation_probability_max[i], wet=isWet(days.weather_code[i]);
+  const grid=`<div class="dd-subtitle">Details</div><div class="dd-grid">
+    <div class="dd-box"><div class="dd-label">High</div><div class="dd-val" style="color:var(--accent)">${T(hi)}</div></div>
+    <div class="dd-box"><div class="dd-label">Low</div><div class="dd-val" style="color:var(--accent3)">${T(lo)}</div></div>
+    <div class="dd-box"><div class="dd-label">Feels max</div><div class="dd-val">${F(days.apparent_temperature_max[i])}</div></div>
+    <div class="dd-box"><div class="dd-label">Feels min</div><div class="dd-val">${F(days.apparent_temperature_min[i])}</div></div>
+    ${wet?`<div class="dd-box"><div class="dd-label">Rain %</div><div class="dd-val">${rainP??0}%</div></div>`:''}
+    ${wet?`<div class="dd-box"><div class="dd-label">Rain total</div><div class="dd-val">${days.precipitation_sum[i]!=null?days.precipitation_sum[i].toFixed(1)+' mm':'—'}</div></div>`:''}
+    <div class="dd-box"><div class="dd-label">Max Wind</div><div class="dd-val">${W(days.wind_speed_10m_max[i])}</div></div>
+    <div class="dd-box"><div class="dd-label">Gusts</div><div class="dd-val">${W(days.wind_gusts_10m_max[i])}</div></div>
+    <div class="dd-box"><div class="dd-label">UV Index</div><div class="dd-val" style="color:var(--accent2)">${days.uv_index_max[i]}</div></div>
+    <div class="dd-box"><div class="dd-label">🌄 Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
+    <div class="dd-box"><div class="dd-label">🌆 Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
+  </div>`;
+  openModal(`${name} · ${dlbl} · ${ic.d}`, `<div class="dd-chart-host"></div>${grid}`);
+  const host=document.querySelector('#modalBody .dd-chart-host');
+  if (host) host.appendChild(dayChart(WX.hourly, dateStr));
+}
+
 // Stargazing tonight: clearer skies + dimmer moon = better.
 function renderStargazing(d, startIdx){
   const body=document.getElementById('starBody'), H=d.hourly;
@@ -957,7 +1001,7 @@ function computeBestDay(days){
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
-const MODE_LABELS = { current:'Classic', minimal:'Minimal', live:'◉ Live Weather', ai:'⚡ Neural Entity Online' };
+const MODE_LABELS = { current:'Classic', cyber:'▣ HUD Online', live:'◉ Live Weather', ai:'⚡ Neural Entity Online' };
 function setTheme(name){
   if(!MODE_LABELS[name]) name='current';
   document.documentElement.setAttribute('data-theme', name);
@@ -1434,9 +1478,13 @@ function renderWeather(d) {
   // Current-hour precipitation probability — matches phone-style "rain now"
   const nowProb = d.hourly.precipitation_probability[start];
 
-  document.getElementById('todayIcon').textContent = wc(cur.weather_code, cur.is_day).i;
+  // Hero icon: use the same whole-day summary as today's 16-day forecast row
+  // (dayIcon looks at all daylight hours) so the hero and the forecast agree —
+  // e.g. a day with rain shows rain here too, not just the current cloud.
+  const heroIc = dayIcon(d.hourly, d.daily.time[0], d.daily.weather_code[0]);
+  document.getElementById('todayIcon').textContent = heroIc.i;
   document.getElementById('todayTemp').textContent = T(cur.temperature_2m);
-  document.getElementById('todayDesc').textContent = wc(cur.weather_code, cur.is_day).d;
+  document.getElementById('todayDesc').textContent = heroIc.d;
   document.getElementById('todayHi').textContent   = T(day0.hi);
   document.getElementById('todayLo').textContent   = T(day0.lo);
   document.getElementById('sFeels').textContent = F(cur.apparent_temperature);
@@ -1470,6 +1518,12 @@ function renderWeather(d) {
 
   // HOURLY — next 24h starting from the location's current hour (not the browser's)
   const scroll=document.getElementById('hourlyScroll'); scroll.innerHTML='';
+  // sunrise/sunset events to slot into the hourly strip (today + tomorrow)
+  const sunEvents=[];
+  for (let dd=0; dd<2 && dd<d.daily.time.length; dd++){
+    if (d.daily.sunrise[dd]) sunEvents.push({t:d.daily.sunrise[dd], rise:true});
+    if (d.daily.sunset[dd])  sunEvents.push({t:d.daily.sunset[dd],  rise:false});
+  }
   for (let k=0; k<24 && (start+k)<times.length; k++) {
     const i = start+k;
     const isNow = (k===0);
@@ -1484,7 +1538,17 @@ function renderWeather(d) {
       <div class="h-feels">${d.hourly.apparent_temperature?'≈'+Math.round(d.hourly.apparent_temperature[i])+'°':''}</div>
       <div class="h-rain">${isWet(code)?'🌧️'+prob+'%':''}</div>`;
     scroll.appendChild(el);
+    // insert a sunrise/sunset card if one falls within this hour
+    const nxt=times[i+1];
+    if (nxt) sunEvents.forEach(ev=>{ if (ev.t>=times[i] && ev.t<nxt){
+      const sc=document.createElement('div'); sc.className='hour-card sun';
+      sc.innerHTML=`<div class="h-time">${ev.rise?'Sunrise':'Sunset'}</div>`
+        +`<div class="h-icon">${ev.rise?'🌄':'🌆'}</div>`
+        +`<div class="h-temp">${ev.t.slice(11,16)}</div><div class="h-feels"></div><div class="h-rain"></div>`;
+      scroll.appendChild(sc);
+    }});
   }
+  scroll.scrollLeft = 0;   // always reset to "Now" when (re)loading a city
 
   // 7-DAY
   const wkGrid=document.getElementById('weekGrid'); wkGrid.innerHTML='';
@@ -1520,56 +1584,13 @@ function renderWeather(d) {
     const rainP=days.precipitation_probability_max[i];
     const wet=isWet(days.weather_code[i]);
     const ic=dayIcon(d.hourly, dateStr, days.weather_code[i]);   // smarter sun-aware icon
-    const row=document.createElement('div'); row.className='week-row'+(i===bestIdx?' best':'');
+    const row=document.createElement('div'); row.className='week-row'+(i===bestIdx?' best':'')+(i>=7?' far':'');
     row.innerHTML=`<div class="wr-day">${i===bestIdx?'⭐ ':''}${name}<small>${dlbl}</small></div>
       <div class="wr-icon">${ic.i}</div>
       <div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%"></div></div>
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
-    const detail=document.createElement('div'); detail.className='day-detail';
-    detail.innerHTML=`<div class="dd-inner"><div class="day-detail-title">${name} · ${dlbl} · ${ic.d}</div>
-      <div class="dd-chart-wrap"></div>
-      <div class="dd-subtitle">Details</div>
-      <div class="dd-grid">
-        <div class="dd-box"><div class="dd-label">High</div><div class="dd-val" style="color:var(--accent)">${T(hi)}</div></div>
-        <div class="dd-box"><div class="dd-label">Low</div><div class="dd-val" style="color:var(--accent3)">${T(lo)}</div></div>
-        <div class="dd-box"><div class="dd-label">Feels max</div><div class="dd-val">${F(days.apparent_temperature_max[i])}</div></div>
-        <div class="dd-box"><div class="dd-label">Feels min</div><div class="dd-val">${F(days.apparent_temperature_min[i])}</div></div>
-        ${wet?`<div class="dd-box"><div class="dd-label">Rain %</div><div class="dd-val">${rainP??0}%</div></div>`:''}
-        ${wet?`<div class="dd-box"><div class="dd-label">Rain total</div><div class="dd-val">${days.precipitation_sum[i]!=null?days.precipitation_sum[i].toFixed(1)+' mm':'—'}</div></div>`:''}
-        <div class="dd-box"><div class="dd-label">Max Wind</div><div class="dd-val">${W(days.wind_speed_10m_max[i])}</div></div>
-        <div class="dd-box"><div class="dd-label">Gusts</div><div class="dd-val">${W(days.wind_gusts_10m_max[i])}</div></div>
-        <div class="dd-box"><div class="dd-label">UV Index</div><div class="dd-val" style="color:var(--accent2)">${days.uv_index_max[i]}</div></div>
-        <div class="dd-box"><div class="dd-label">Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
-        <div class="dd-box"><div class="dd-label">Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
-      </div></div>`;
-    const chartWrap=detail.querySelector('.dd-chart-wrap');
-    function expand(){
-      if (!chartWrap.dataset.built){ chartWrap.appendChild(dayChart(d.hourly, dateStr)); chartWrap.dataset.built='1'; }
-      detail.classList.add('open'); row.classList.add('active');
-      detail.style.height='0px'; detail.offsetHeight;                 // start point
-      detail.style.height=detail.scrollHeight+'px';                   // animate open
-      clearTimeout(detail._ht); detail._ht=setTimeout(()=>{ if(detail.classList.contains('open')) detail.style.height='auto'; }, 1350);
-    }
-    function collapse(el){
-      el.style.height=el.scrollHeight+'px'; el.offsetHeight;          // fix current height
-      el.classList.remove('open');
-      requestAnimationFrame(()=>{ el.style.height='0px'; });          // animate closed
-    }
-    detail._collapse=collapse;
-    row.addEventListener('click',()=>{
-      if (detail.classList.contains('open')){ collapse(detail); row.classList.remove('active'); return; }
-      // close any other open day (animated), then centre this one, then open it
-      const others=[...wkGrid.querySelectorAll('.day-detail.open')];
-      others.forEach(x=>{ x._collapse(x); });
-      wkGrid.querySelectorAll('.week-row').forEach(x=>x.classList.remove('active'));
-      const wait = others.length ? 1150 : 60;                          // wait for the close to finish
-      setTimeout(()=>{
-        row.scrollIntoView({behavior:'smooth', block:'center'});
-        setTimeout(expand, 480);                                       // open after the centre scroll
-      }, wait);
-    });
-    const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
-    (i>=7 && farBox ? farBox : wkGrid).appendChild(wrap);
+    row.addEventListener('click',()=>openDayModal(i));   // open the centred day popup
+    (i>=7 && farBox ? farBox : wkGrid).appendChild(row);
   });
 }
 
