@@ -203,6 +203,9 @@ body::before {
 .week-divider { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 12px 4px 4px; border-top: 1px dashed var(--border); margin-top: 4px; }
 .far { opacity: 0.6; }
 .far:hover { opacity: 0.85; }
+.week-row.best { border-color: var(--accent); box-shadow: 0 0 14px -6px var(--accent); }
+.best-day { font-size: 12px; color: var(--text); background: rgba(var(--accent-rgb),0.08); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.5; }
+.best-day b { color: var(--accent); }
 .week-row { display: grid; grid-template-columns: 90px 38px 1fr 80px; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; cursor: pointer; transition: border-color 0.2s; -webkit-tap-highlight-color: transparent; }
 .week-row:hover, .week-row.active { border-color: var(--accent); }
 .wr-day { font-size: 12px; font-weight: 500; }
@@ -407,8 +410,14 @@ td.rain-c { color: var(--accent3); }
 
     <!-- HOURLY -->
     <div class="card" style="animation-delay:0.1s">
-      <div class="card-title accent3">Hourly — Next 24 hours <button type="button" class="mini-btn" onclick="openRainGraph()">📈 Rain graph</button></div>
+      <div class="card-title accent3">Hourly — Next 24 hours <button type="button" class="mini-btn" onclick="openUvGraph()">☀️ UV</button><button type="button" class="mini-btn" onclick="openRainGraph()">📈 Rain</button></div>
       <div class="hourly-scroll" id="hourlyScroll"></div>
+    </div>
+
+    <!-- STARGAZING TONIGHT -->
+    <div class="card" id="starCard" style="animation-delay:0.11s">
+      <div class="card-title accent3">Stargazing Tonight</div>
+      <div id="starBody"></div>
     </div>
 
     <!-- AIR QUALITY -->
@@ -426,6 +435,7 @@ td.rain-c { color: var(--accent3); }
     <!-- FORECAST -->
     <div class="card" style="animation-delay:0.15s">
       <div class="card-title accent2">16-Day Forecast</div>
+      <div id="bestDay" class="best-day hidden"></div>
       <p style="font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:0.04em;">Tap any day for details · days past a week are long-range estimates and can be off.</p>
       <div class="week-grid" id="weekGrid"></div>
     </div>
@@ -545,12 +555,23 @@ const windDir = d => d==null ? '' : COMPASS[Math.round(d/22.5)%16];
 function moonPhase(date){
   const syn=29.530588853, knownNew=Date.UTC(2000,0,6,18,14);
   let age=(((date.getTime()-knownNew)/86400000)%syn+syn)%syn;
+  const illum=(1-Math.cos(2*Math.PI*age/syn))/2;   // 0 = new, 1 = full
   const names=[[1.85,'🌑','New moon'],[5.54,'🌒','Waxing crescent'],[9.23,'🌓','First quarter'],
     [12.91,'🌔','Waxing gibbous'],[16.61,'🌕','Full moon'],[20.30,'🌖','Waning gibbous'],
     [23.99,'🌗','Last quarter'],[27.68,'🌘','Waning crescent'],[30,'🌑','New moon']];
-  for (const [max,emoji,name] of names) if (age<max) return {emoji,name,age:Math.round(age)};
-  return {emoji:'🌑',name:'New moon',age:0};
+  for (const [max,emoji,name] of names) if (age<max) return {emoji,name,age:Math.round(age),illum};
+  return {emoji:'🌑',name:'New moon',age:0,illum};
 }
+
+// UV category + rough time-to-sunburn (fair skin, type II) for the UV graph
+function uvCategory(uv){
+  if (uv<3) return {label:'Low', cls:'aq-1'};
+  if (uv<6) return {label:'Moderate', cls:'aq-3'};
+  if (uv<8) return {label:'High', cls:'aq-4'};
+  if (uv<11) return {label:'Very high', cls:'aq-5'};
+  return {label:'Extreme', cls:'aq-6'};
+}
+const burnMinutes = uv => uv<1 ? null : Math.round(200/uv);   // ~fair skin, approximate
 
 // Smarter day icon: the API's daily code is the day's *worst* weather, so sunny
 // days with one shower looked gloomy. Look at the daylight hours and prefer sun
@@ -660,6 +681,59 @@ function openRainGraph(){
   html+='<div class="chart-scroll">'+barChart(labels, probs, {unit:'%', max:100})+'</div>';
   html+='<p class="pollen-disc">Bars show hourly probability of precipitation (≥0.1 mm).</p>';
   openModal('Rain — hour by hour', html);
+}
+
+// Hourly UV curve for today + peak and approximate burn time.
+function openUvGraph(){
+  if (!WX) return;
+  const H=WX.hourly, today=(WX.current.time||H.time[0]).slice(0,10);
+  const labels=[], uvs=[]; let peak=0, peakAt='';
+  for (let i=0;i<H.time.length;i++){
+    if (!H.time[i].startsWith(today)) continue;
+    const uv=+(H.uv_index[i]??0).toFixed(1);
+    labels.push(H.time[i].slice(11,16)); uvs.push(uv);
+    if (uv>peak){ peak=uv; peakAt=H.time[i].slice(11,16); }
+  }
+  const cat=uvCategory(peak), bm=burnMinutes(peak);
+  let html=`<p class="modal-note">Peak UV today <b>${peak.toFixed(1)}</b> <span class="pollen-pill ${cat.cls}">${cat.label}</span> around <b>${peakAt||'—'}</b></p>`;
+  if (bm) html+=`<p class="modal-note">At peak, fair skin can start to burn in about <b>${bm} min</b> without protection.</p>`;
+  html+='<div class="chart-scroll">'+barChart(labels, uvs, {unit:'', max:Math.max(11,peak)})+'</div>';
+  html+='<p class="pollen-disc">Burn time is approximate (skin type II). Darker skin tones take ~2–4× longer.</p>';
+  openModal('UV index — hour by hour', html);
+}
+
+// Stargazing tonight: clearer skies + dimmer moon = better.
+function renderStargazing(d, startIdx){
+  const body=document.getElementById('starBody'), H=d.hourly;
+  let i=startIdx; const clouds=[];
+  while (i<H.time.length && H.is_day[i]===1) i++;          // skip remaining daylight
+  const nightStart=i<H.time.length?H.time[i]:null;
+  while (i<H.time.length && H.is_day[i]===0){ if(H.cloud_cover[i]!=null) clouds.push(H.cloud_cover[i]); i++; }
+  if (!clouds.length){ body.innerHTML='<p class="pollen-note">No clear night window in range (polar day?).</p>'; return; }
+  const avgCloud=Math.round(clouds.reduce((s,v)=>s+v,0)/clouds.length);
+  const moon=moonPhase(new Date(d.current.time||Date.now()));
+  const illumPct=Math.round(moon.illum*100);
+  let score=Math.round((100-avgCloud) - moon.illum*25);
+  score=Math.max(0,Math.min(100,score));
+  const rating = score>=75?{t:'Excellent ✨',c:'aq-1'} : score>=55?{t:'Good',c:'aq-2'} : score>=35?{t:'Fair',c:'aq-3'} : {t:'Poor',c:'aq-5'};
+  body.innerHTML=`<div class="aq-head"><span class="aq-badge ${rating.c}">${score}</span>`
+    + `<div><div class="aq-label">${rating.t}</div><div class="aq-scale">tonight</div></div></div>`
+    + `<p class="pollen-disc">Avg cloud cover ~${avgCloud}% · ${moon.emoji} moon ${illumPct}% lit (${moon.name})`
+    + `${nightStart?' · from '+fmtTime(nightStart):''}</p>`;
+}
+
+// Best day to go out over the reliable (first 7) days.
+function computeBestDay(days){
+  let best=-1, bestScore=-1e9;
+  const n=Math.min(7, days.time.length);
+  for (let i=0;i<n;i++){
+    const t=(days.apparent_temperature_max?.[i] ?? days.temperature_2m_max[i]);
+    const rain=days.precipitation_probability_max[i] ?? 0;
+    const wind=days.wind_speed_10m_max[i] ?? 0;
+    const score = 100 - Math.abs(t-22)*2.2 - rain*0.55 - Math.max(0,wind-15)*1.1;
+    if (score>bestScore){ bestScore=score; best=i; }
+  }
+  return best;
 }
 const acList    = document.getElementById('acList');
 
@@ -854,7 +928,7 @@ async function loadWeather(lat, lon, label) {
   const url = 'https://api.open-meteo.com/v1/forecast'
     + '?latitude='+lat+'&longitude='+lon
     + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index,is_day,cloud_cover,surface_pressure'
-    + '&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,weather_code,precipitation,precipitation_probability,wind_speed_10m,is_day'
+    + '&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,weather_code,precipitation,precipitation_probability,wind_speed_10m,cloud_cover,uv_index,is_day'
     + '&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,sunrise,sunset'
     + '&timezone=auto&forecast_days=16&models=best_match';
   try {
@@ -930,6 +1004,9 @@ function renderWeather(d) {
     rowRain.classList.add('hidden');
   }
 
+  // Stargazing tonight (clouds + moon)
+  renderStargazing(d, start);
+
   // HOURLY — next 24h starting from the location's current hour (not the browser's)
   const scroll=document.getElementById('hourlyScroll'); scroll.innerHTML='';
   for (let k=0; k<24 && (start+k)<times.length; k++) {
@@ -951,6 +1028,16 @@ function renderWeather(d) {
   const wkGrid=document.getElementById('weekGrid'); wkGrid.innerHTML='';
   const days=d.daily;
   const gMin=Math.min(...days.temperature_2m_min), gMax=Math.max(...days.temperature_2m_max), range=gMax-gMin||1;
+  const bestIdx=computeBestDay(days);
+  const bestEl=document.getElementById('bestDay');
+  if (bestIdx>=0) {
+    const bd=new Date(days.time[bestIdx]+'T12:00:00');
+    const bname=bestIdx===0?'Today':bd.toLocaleDateString('en-US',{weekday:'long'});
+    bestEl.innerHTML=`⭐ <b>Best day to go out:</b> ${bname} — ${T(days.temperature_2m_max[bestIdx])}, `
+      + `${isWet(days.weather_code[bestIdx])?(days.precipitation_probability_max[bestIdx]??0)+'% rain':'dry'}, `
+      + `wind ${W(days.wind_speed_10m_max[bestIdx])}`;
+    bestEl.classList.remove('hidden');
+  } else { bestEl.classList.add('hidden'); }
   days.time.forEach((dateStr,i)=>{
     if (i===7) {   // everything past a week is long-range / low confidence
       const div=document.createElement('div'); div.className='week-divider';
@@ -965,8 +1052,8 @@ function renderWeather(d) {
     const rainP=days.precipitation_probability_max[i];
     const wet=isWet(days.weather_code[i]);
     const ic=dayIcon(d.hourly, dateStr, days.weather_code[i]);   // smarter sun-aware icon
-    const row=document.createElement('div'); row.className='week-row';
-    row.innerHTML=`<div class="wr-day">${name}<small>${dlbl}</small></div>
+    const row=document.createElement('div'); row.className='week-row'+(i===bestIdx?' best':'');
+    row.innerHTML=`<div class="wr-day">${i===bestIdx?'⭐ ':''}${name}<small>${dlbl}</small></div>
       <div class="wr-icon">${ic.i}</div>
       <div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%"></div></div>
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
