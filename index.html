@@ -330,7 +330,8 @@ td.rain-c { color: var(--accent3); }
 .tappable { cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
 .tappable:hover { border-color: var(--accent); }
 .tappable:active { transform: scale(0.995); }
-.tap-hint { display: inline-block; font-size: 9px; color: var(--accent); letter-spacing: 0.06em; margin-left: 8px; text-transform: uppercase; border: 1px solid var(--accent); background: rgba(var(--accent-rgb),0.12); border-radius: 99px; padding: 3px 10px; vertical-align: middle; }
+.tap-hint { display: none; font-size: 9px; color: var(--accent); letter-spacing: 0.06em; margin-left: 8px; text-transform: uppercase; border: 1px solid var(--accent); background: rgba(var(--accent-rgb),0.12); border-radius: 99px; padding: 3px 10px; vertical-align: middle; }
+.tappable .tap-hint { display: inline-block; }   /* only show the cue on cards that are actually pressable */
 .mini-btn { float: right; min-width: 66px; height: 26px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: var(--font); font-size: 10px; line-height: 1; letter-spacing: 0.04em; padding: 0 11px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
 .mini-btn:active { opacity: 0.8; }
 
@@ -516,7 +517,7 @@ td.rain-c { color: var(--accent3); }
 
     <!-- AIR QUALITY -->
     <div class="card" id="airCard" style="animation-delay:0.12s" onclick="openAirModal()">
-      <div class="card-title accent3">Air Quality — Today</div>
+      <div class="card-title accent3">Air Quality — Today <span class="tap-hint">tap for details ›</span></div>
       <div id="airBody"></div>
     </div>
 
