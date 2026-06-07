@@ -1548,6 +1548,7 @@ function renderWeather(d) {
       scroll.appendChild(sc);
     }});
   }
+  scroll.scrollLeft = 0;   // always reset to "Now" when (re)loading a city
 
   // 7-DAY
   const wkGrid=document.getElementById('weekGrid'); wkGrid.innerHTML='';
