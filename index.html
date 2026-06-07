@@ -342,9 +342,14 @@ td.rain-c { color: var(--accent3); }
 #euMapEl { width: 100%; height: 66vh; min-height: 380px; background: #0a0a0a; }
 .map-overlay { position: absolute; top: 12px; left: 12px; z-index: 1000; background: rgba(0,0,0,0.6); color: #fff; font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 11px; border-radius: 99px; pointer-events: none; }
 .map-overlay.hidden { display: none; }
-.emoji-pin { background: none !important; border: none !important; text-align: center; }
-.pin-emoji { font-size: 20px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
-.pin-temp { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; color: #fff; text-shadow: 0 1px 2px #000; margin-top: -2px; }
+.emoji-pin { background: none !important; border: none !important; }
+.emoji-pin .pin { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 46px; }
+.pin-emoji { font-size: 15px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.75)); transition: font-size 0.15s ease; }
+.pin-temp { font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; color: #fff; text-shadow: 0 1px 2px #000; margin-top: -1px; }
+.pin-name { display: none; font-size: 9px; color: #fff; text-shadow: 0 1px 3px #000; margin-top: 1px; white-space: nowrap; }
+#euMapEl.zoomed .pin-emoji { font-size: 27px; }
+#euMapEl.zoomed .pin-temp { font-size: 11px; }
+#euMapEl.zoomed .pin-name { display: block; }
 
 /* ── WHAT TO WEAR ── */
 .wear-chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -911,44 +916,76 @@ const CARTO='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
 // ── EUROPE LIVE WEATHER — one emoji pin per city ─────────────────
 const EU_CITIES=[
-  ['London',51.51,-0.13],['Paris',48.85,2.35],['Berlin',52.52,13.40],['Madrid',40.42,-3.70],
-  ['Rome',41.90,12.50],['Brussels',50.85,4.35],['Amsterdam',52.37,4.90],['Vienna',48.21,16.37],
-  ['Lisbon',38.72,-9.14],['Dublin',53.35,-6.26],['Copenhagen',55.68,12.57],['Stockholm',59.33,18.06],
-  ['Oslo',59.91,10.75],['Helsinki',60.17,24.94],['Warsaw',52.23,21.01],['Prague',50.08,14.44],
-  ['Budapest',47.50,19.04],['Athens',37.98,23.73],['Zurich',47.37,8.54],['Barcelona',41.39,2.17],
-  ['Munich',48.14,11.58],['Milan',45.46,9.19],['Kyiv',50.45,30.52],['Bucharest',44.43,26.10],
-  ['Belgrade',44.79,20.45],['Istanbul',41.01,28.98],['Reykjavik',64.15,-21.94],['Edinburgh',55.95,-3.19]
+  ['London',51.51,-0.13],['Manchester',53.48,-2.24],['Birmingham',52.48,-1.90],['Glasgow',55.86,-4.25],
+  ['Edinburgh',55.95,-3.19],['Liverpool',53.41,-2.99],['Bristol',51.45,-2.59],['Cardiff',51.48,-3.18],
+  ['Belfast',54.60,-5.93],['Dublin',53.35,-6.26],['Cork',51.90,-8.47],
+  ['Paris',48.85,2.35],['Marseille',43.30,5.37],['Lyon',45.76,4.84],['Toulouse',43.60,1.44],
+  ['Nice',43.70,7.27],['Nantes',47.22,-1.55],['Strasbourg',48.58,7.75],['Bordeaux',44.84,-0.58],['Lille',50.63,3.07],
+  ['Madrid',40.42,-3.70],['Barcelona',41.39,2.17],['Valencia',39.47,-0.38],['Seville',37.39,-5.99],
+  ['Bilbao',43.26,-2.93],['Malaga',36.72,-4.42],['Zaragoza',41.65,-0.88],
+  ['Lisbon',38.72,-9.14],['Porto',41.15,-8.61],
+  ['Rome',41.90,12.50],['Milan',45.46,9.19],['Naples',40.85,14.27],['Turin',45.07,7.69],
+  ['Palermo',38.12,13.36],['Florence',43.77,11.26],['Venice',45.44,12.32],['Bologna',44.49,11.34],['Bari',41.12,16.87],
+  ['Berlin',52.52,13.40],['Hamburg',53.55,9.99],['Munich',48.14,11.58],['Cologne',50.94,6.96],
+  ['Frankfurt',50.11,8.68],['Stuttgart',48.78,9.18],['Düsseldorf',51.23,6.78],['Leipzig',51.34,12.37],
+  ['Bremen',53.08,8.80],['Hanover',52.37,9.73],['Nuremberg',49.45,11.08],
+  ['Amsterdam',52.37,4.90],['Rotterdam',51.92,4.48],['The Hague',52.08,4.31],['Eindhoven',51.44,5.48],
+  ['Brussels',50.85,4.35],['Antwerp',51.22,4.40],['Ghent',51.05,3.72],
+  ['Zurich',47.37,8.54],['Geneva',46.20,6.14],['Bern',46.95,7.45],['Basel',47.56,7.59],
+  ['Vienna',48.21,16.37],['Graz',47.07,15.44],['Salzburg',47.81,13.04],
+  ['Luxembourg',49.61,6.13],
+  ['Copenhagen',55.68,12.57],['Aarhus',56.16,10.20],['Stockholm',59.33,18.06],['Gothenburg',57.71,11.97],
+  ['Malmö',55.61,13.00],['Oslo',59.91,10.75],['Bergen',60.39,5.32],['Helsinki',60.17,24.94],['Reykjavik',64.15,-21.94],
+  ['Warsaw',52.23,21.01],['Kraków',50.06,19.94],['Gdańsk',54.35,18.65],['Wrocław',51.11,17.04],['Poznań',52.41,16.93],
+  ['Prague',50.08,14.44],['Brno',49.20,16.61],['Bratislava',48.15,17.11],['Budapest',47.50,19.04],
+  ['Bucharest',44.43,26.10],['Cluj-Napoca',46.77,23.60],['Sofia',42.70,23.32],
+  ['Athens',37.98,23.73],['Thessaloniki',40.64,22.94],
+  ['Belgrade',44.79,20.45],['Zagreb',45.81,15.98],['Ljubljana',46.06,14.51],['Sarajevo',43.85,18.36],
+  ['Skopje',41.99,21.43],['Tirana',41.33,19.82],
+  ['Vilnius',54.69,25.28],['Riga',56.95,24.11],['Tallinn',59.44,24.75],
+  ['Kyiv',50.45,30.52],['Lviv',49.84,24.03],['Odesa',46.48,30.72],
+  ['Istanbul',41.01,28.98],['Ankara',39.93,32.86],['Izmir',38.42,27.14]
 ];
 let euMap=null, euLayer=null;
 function openEuropeMap(){
   if (!window.L){ setOverlay('euOverlay','Map library failed to load'); return; }
   if (!euMap){
-    euMap=L.map('euMapEl',{zoomControl:true}).setView([54,15], 4);
-    L.tileLayer(CARTO, {maxZoom:10, attribution:'© OpenStreetMap, © CARTO'}).addTo(euMap);
+    euMap=L.map('euMapEl',{zoomControl:true}).setView([52,12], 4);
+    L.tileLayer(CARTO, {maxZoom:11, attribution:'© OpenStreetMap, © CARTO'}).addTo(euMap);
+    euMap.on('zoomend', updateEuZoom);
     loadEurope();
   }
-  setTimeout(()=>euMap && euMap.invalidateSize(), 130);
+  setTimeout(()=>{ if(euMap){ euMap.invalidateSize(); updateEuZoom(); } }, 130);
+}
+function updateEuZoom(){
+  const el=document.getElementById('euMapEl');
+  if (el && euMap) el.classList.toggle('zoomed', euMap.getZoom()>=6);
 }
 async function loadEurope(){
   setOverlay('euOverlay','Loading cities…');
   try{
-    const lats=EU_CITIES.map(c=>c[1]).join(','), lons=EU_CITIES.map(c=>c[2]).join(',');
-    const c=new AbortController(); setTimeout(()=>c.abort(), 10000);
-    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day&timezone=auto`;
-    const data=await (await fetch(url, {signal:c.signal})).json();
-    const arr=Array.isArray(data)?data:[data];
+    const SIZE=50, chunks=[];
+    for (let i=0;i<EU_CITIES.length;i+=SIZE) chunks.push(EU_CITIES.slice(i,i+SIZE));
+    const results=await Promise.all(chunks.map(async ch=>{
+      const lats=ch.map(c=>c[1]).join(','), lons=ch.map(c=>c[2]).join(',');
+      const ac=new AbortController(); setTimeout(()=>ac.abort(), 12000);
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+      const data=await (await fetch(url, {signal:ac.signal})).json();
+      return Array.isArray(data)?data:[data];
+    }));
+    const arr=results.flat();   // aligned to EU_CITIES order
     if (euLayer) euLayer.remove();
     euLayer=L.layerGroup().addTo(euMap);
     let placed=0;
     arr.forEach((r,i)=>{
       const city=EU_CITIES[i]; if(!city||!r.current) return;
       const info=wc(r.current.weather_code, r.current.is_day), tmp=Math.round(r.current.temperature_2m);
-      const html=`<div class="pin-emoji">${info.i}</div><div class="pin-temp">${tmp}°</div>`;
-      L.marker([city[1],city[2]], {icon:L.divIcon({className:'emoji-pin', html, iconSize:[42,42]})})
+      const html=`<div class="pin"><span class="pin-emoji">${info.i}</span><span class="pin-temp">${tmp}°</span><span class="pin-name">${city[0]}</span></div>`;
+      L.marker([city[1],city[2]], {icon:L.divIcon({className:'emoji-pin', html, iconSize:[46,46], iconAnchor:[23,23]})})
         .bindPopup(`<b>${city[0]}</b><br>${info.i} ${info.d} · ${tmp}°C`).addTo(euLayer);
       placed++;
     });
-    setOverlay('euOverlay', placed?'● Live · '+placed+' cities':'No city data', placed>0);
+    setOverlay('euOverlay', placed?'● Live · '+placed+' cities · zoom in for detail':'No city data', placed>0);
     if(!placed) setOverlay('euOverlay','No city data');
   }catch(e){ setOverlay('euOverlay','Could not load city weather'); }
 }
