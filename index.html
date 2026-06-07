@@ -746,8 +746,8 @@ function dayChart(hourly, dateStr){
   const hrs=idx.map(k=>+hourly.time[k].slice(11,13));
   const haveFeels=feels.some(v=>v!=null);
   const step=n>=18?2:1;                       // label every 2 hours for clarity
-  const W=340,H=178,L=12,R=12;
-  const iconsY=14, plotTop=56, plotBot=H-38, hoursY=H-24, rainY=H-9;
+  const W=340,H=192,L=12,R=12;
+  const iconsY=15, plotTop=60, plotBot=H-48, hoursY=H-28, rainY=H-9;
   const allT=temp.concat(haveFeels?feels.filter(v=>v!=null):[]);
   let tMin=Math.min(...allT), tMax=Math.max(...allT); if(tMin===tMax){tMin-=1;tMax+=1;}
   const x=i=> L+(W-L-R)*(n<=1?0.5:i/(n-1));
@@ -767,12 +767,12 @@ function dayChart(hourly, dateStr){
   let icons='',dots='',tlab='',hours='',rrow='';
   for(let i=0;i<n;i+=step){
     const xi=x(i).toFixed(1), ty=y(temp[i]);
-    icons+=`<text x="${xi}" y="${iconsY}" text-anchor="middle" font-size="13">${wc(code[i],isday[i]).i}</text>`;
+    icons+=`<text x="${xi}" y="${iconsY}" text-anchor="middle" font-size="14">${wc(code[i],isday[i]).i}</text>`;
     dots +=`<circle cx="${xi}" cy="${ty.toFixed(1)}" r="2" fill="var(--accent)"/>`;
-    if(haveFeels&&feels[i]!=null) tlab+=`<text x="${xi}" y="${(ty-15).toFixed(1)}" text-anchor="middle" font-size="7.5" fill="var(--accent2)">(${Math.round(feels[i])}°)</text>`;
-    tlab +=`<text x="${xi}" y="${(ty-6).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="var(--text)">${Math.round(temp[i])}°</text>`;
-    hours+=`<text x="${xi}" y="${hoursY}" text-anchor="middle" font-size="8" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`;
-    rrow+=`<text x="${xi}" y="${rainY}" text-anchor="middle" font-size="8" fill="var(--accent3)">${prob[i]>0?prob[i]+'%':'·'}</text>`;
+    if(haveFeels&&feels[i]!=null) tlab+=`<text x="${xi}" y="${(ty-17).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="var(--accent2)">(${Math.round(feels[i])}°)</text>`;
+    tlab +=`<text x="${xi}" y="${(ty-6).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="500" fill="var(--text)">${Math.round(temp[i])}°</text>`;
+    hours+=`<text x="${xi}" y="${hoursY}" text-anchor="middle" font-size="10" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`;
+    rrow+=`<text x="${xi}" y="${rainY}" text-anchor="middle" font-size="10" fill="var(--accent3)">${prob[i]>0?prob[i]+'%':'·'}</text>`;
   }
   const rowTags=`<text x="0" y="${rainY}" font-size="7" fill="var(--accent3)">☂</text>`;
   const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>(feels like)</span>':''}<span><i style="background:var(--accent3)"></i>Rain % ☂</span></div>`;
