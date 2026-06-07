@@ -567,7 +567,7 @@ td.rain-c { color: var(--accent3); }
       <div id="euMapEl"></div>
       <div id="euOverlay" class="map-overlay">Loading cities…</div>
     </div>
-    <p class="map-status">Live conditions across Europe — cities load for whatever area you're viewing; pan and zoom in to reveal more. Tap a pin for details.</p>
+    <p class="map-status">Live conditions across ~100 European cities — zoom in for bigger icons &amp; names. Tap a pin for details.</p>
   </div>
 
   <div class="disclaimer">SkyCast · Open-Meteo · Map: OpenStreetMap/CARTO</div>
@@ -720,8 +720,8 @@ function barChart(labels, values, opts={}){
 }
 
 // Per-day hour-by-hour chart that scales to the card width (no scroll):
-// temperature (line+area) + feels-like (dashed) + rain% bars + icons + night shading.
-function dayChart(hourly, dateStr, sunriseISO, sunsetISO){
+// icons on top, temp + feels value rows, rain % as a row BELOW the graph.
+function dayChart(hourly, dateStr){
   const idx=[]; for(let k=0;k<hourly.time.length;k++) if(hourly.time[k].startsWith(dateStr)) idx.push(k);
   if(!idx.length) return '<p class="pollen-note">No hourly data for this day.</p>';
   const n=idx.length;
@@ -732,42 +732,44 @@ function dayChart(hourly, dateStr, sunriseISO, sunsetISO){
   const isday=idx.map(k=>hourly.is_day[k]);
   const hrs=idx.map(k=>+hourly.time[k].slice(11,13));
   const haveFeels=feels.some(v=>v!=null);
-  const W=340,H=164,L=10,R=10,Tp=22,Bp=34;
+  const step=n>=18?2:1;                       // label every 2 hours for clarity
+  const W=340,H=198,L=12,R=12;
+  const iconsY=14, plotTop=48, plotBot=H-62, hoursY=H-46, feelsY=H-28, rainY=H-11;
   const allT=temp.concat(haveFeels?feels.filter(v=>v!=null):[]);
   let tMin=Math.min(...allT), tMax=Math.max(...allT); if(tMin===tMax){tMin-=1;tMax+=1;}
   const x=i=> L+(W-L-R)*(n<=1?0.5:i/(n-1));
-  const y=t=> Tp+(H-Tp-Bp)*(1-(t-tMin)/(tMax-tMin));
+  const y=t=> plotTop+(plotBot-plotTop)*(1-(t-tMin)/(tMax-tMin));
   // night shading
   let shade='',s=null;
   for(let i=0;i<=n;i++){ const night=i<n&&isday[i]===0;
     if(night&&s===null) s=i;
     if((!night||i===n)&&s!==null){ const x0=x(Math.max(s-0.5,0)),x1=x(Math.min(i-0.5,n-1));
-      shade+=`<rect x="${x0.toFixed(1)}" y="${Tp}" width="${Math.max(x1-x0,0).toFixed(1)}" height="${H-Tp-Bp}" fill="rgba(120,140,180,0.10)"/>`; s=null; } }
-  // rain bars
-  const rb=24, rbY=H-Bp; let rain='';
-  prob.forEach((p,i)=>{ if(p>0){ const h=(p/100)*rb; rain+=`<rect x="${(x(i)-3).toFixed(1)}" y="${(rbY-h).toFixed(1)}" width="6" height="${h.toFixed(1)}" rx="1" fill="var(--accent3)" opacity="0.5"/>`;
-    if(p>=30) rain+=`<text x="${x(i).toFixed(1)}" y="${(rbY-h-2).toFixed(1)}" text-anchor="middle" font-size="6.5" fill="var(--accent3)">${p}</text>`; } });
+      shade+=`<rect x="${x0.toFixed(1)}" y="${plotTop}" width="${Math.max(x1-x0,0).toFixed(1)}" height="${plotBot-plotTop}" fill="rgba(120,140,180,0.10)"/>`; s=null; } }
   // temp area + line
   const pts=temp.map((t,i)=>x(i).toFixed(1)+' '+y(t).toFixed(1));
+  const area=`M${x(0).toFixed(1)} ${plotBot} L`+pts.join(' L')+` L${x(n-1).toFixed(1)} ${plotBot} Z`;
   const line='M'+pts.join(' L');
-  const area=`M${x(0).toFixed(1)} ${(H-Bp).toFixed(1)} L`+pts.join(' L')+` L${x(n-1).toFixed(1)} ${(H-Bp).toFixed(1)} Z`;
   let fline=''; if(haveFeels){ feels.forEach((t,i)=>{ if(t==null)return; fline+=(fline?' L':'M')+x(i).toFixed(1)+' '+y(t).toFixed(1); }); }
-  // icons + hour labels every 3h
-  let icons='',labels='';
-  for(let i=0;i<n;i+=3){ icons+=`<text x="${x(i).toFixed(1)}" y="15" text-anchor="middle" font-size="13">${wc(code[i],isday[i]).i}</text>`;
-    labels+=`<text x="${x(i).toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="8" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`; }
-  // hi/lo markers with values
-  const iMax=temp.indexOf(Math.max(...temp)), iMin=temp.indexOf(Math.min(...temp));
-  let marks='';
-  [iMax,iMin].forEach(mi=>{ marks+=`<circle cx="${x(mi).toFixed(1)}" cy="${y(temp[mi]).toFixed(1)}" r="2.6" fill="var(--accent)"/>`
-    +`<text x="${x(mi).toFixed(1)}" y="${(y(temp[mi])-6).toFixed(1)}" text-anchor="middle" font-size="9" fill="var(--text)">${Math.round(temp[mi])}°</text>`; });
-  const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>Feels like</span>':''}<span><i style="background:var(--accent3)"></i>Rain %</span></div>`;
+  // per-step: icon (top), temp dot+value (on graph), hour / feels / rain rows (below)
+  let icons='',dots='',tlab='',hours='',frow='',rrow='';
+  for(let i=0;i<n;i+=step){
+    const xi=x(i).toFixed(1);
+    icons+=`<text x="${xi}" y="${iconsY}" text-anchor="middle" font-size="13">${wc(code[i],isday[i]).i}</text>`;
+    dots +=`<circle cx="${xi}" cy="${y(temp[i]).toFixed(1)}" r="2" fill="var(--accent)"/>`;
+    tlab +=`<text x="${xi}" y="${(y(temp[i])-6).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="var(--text)">${Math.round(temp[i])}°</text>`;
+    hours+=`<text x="${xi}" y="${hoursY}" text-anchor="middle" font-size="8" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`;
+    if(haveFeels&&feels[i]!=null) frow+=`<text x="${xi}" y="${feelsY}" text-anchor="middle" font-size="8" fill="var(--accent2)">${Math.round(feels[i])}°</text>`;
+    rrow+=`<text x="${xi}" y="${rainY}" text-anchor="middle" font-size="8" fill="var(--accent3)">${prob[i]>0?prob[i]+'%':'·'}</text>`;
+  }
+  // row labels on the far left
+  const rowTags=`<text x="0" y="${feelsY}" font-size="7" fill="var(--accent2)">≈</text><text x="0" y="${rainY}" font-size="7" fill="var(--accent3)">☂</text>`;
+  const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>Feels like ≈</span>':''}<span><i style="background:var(--accent3)"></i>Rain % ☂</span></div>`;
   return `<div class="dd-chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">`
-    +`<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0.32"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
-    +shade+rain
+    +`<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0.30"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
+    +shade
     +`<path d="${area}" fill="url(#tg)"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`
     +(haveFeels?`<path d="${fline}" fill="none" stroke="var(--accent2)" stroke-width="1.4" stroke-dasharray="4 3"/>`:'')
-    +marks+icons+labels+`</svg>`+legend+`</div>`;
+    +dots+icons+tlab+hours+frow+rrow+rowTags+`</svg>`+legend+`</div>`;
 }
 
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
@@ -1076,8 +1078,7 @@ function openEuropeMap(){
     euMap=L.map('euMapEl',{zoomControl:true}).setView([52,12], 4);
     L.tileLayer(CARTO, {maxZoom:11, attribution:'© OpenStreetMap, © CARTO'}).addTo(euMap);
     euMap.on('zoomend', updateEuZoom);
-    euMap.on('moveend', scheduleEuLoad);   // dynamic: reload cities for the new view
-    scheduleEuLoad();
+    loadEurope();
   }
   setTimeout(()=>{ if(euMap){ euMap.invalidateSize(); updateEuZoom(); } }, 130);
 }
@@ -1085,23 +1086,12 @@ function updateEuZoom(){
   const el=document.getElementById('euMapEl');
   if (el && euMap) el.classList.toggle('zoomed', euMap.getZoom()>=6);
 }
-function scheduleEuLoad(){ clearTimeout(euMoveTimer); euMoveTimer=setTimeout(loadCities, 500); }
-
-// Dynamically load whichever cities are in view (denser as you zoom in),
-// via OpenStreetMap Overpass (keyless); fall back to the static list.
-async function loadCities(){
-  const myId=++euReqId;
-  const b=euMap.getBounds(), zoom=euMap.getZoom();
+// Static list of ~100 main European cities — loaded once (fast).
+async function loadEurope(){
   setOverlay('euOverlay','Loading cities…');
-  let cities=await fetchCitiesOverpass(b, zoom).catch(()=>null);
-  if (!cities || !cities.length) cities=fallbackCities(b);
-  const cap = zoom<=4 ? 40 : zoom<=6 ? 60 : 80;
-  cities=cities.slice(0, cap);
-  if (myId!==euReqId) return;
-  if (!cities.length){ if(euLayer) euLayer.remove(); setOverlay('euOverlay','No cities in view'); return; }
+  const cities=EU_CITIES.map(c=>({name:c[0], lat:c[1], lon:c[2]}));
   let wx;
   try { wx=await fetchCityWeather(cities); } catch(e){ setOverlay('euOverlay','Could not load city weather'); return; }
-  if (myId!==euReqId) return;
   if (euLayer) euLayer.remove();
   euLayer=L.layerGroup().addTo(euMap);
   let placed=0;
@@ -1114,29 +1104,7 @@ async function loadCities(){
     placed++;
   });
   updateEuZoom();
-  setOverlay('euOverlay', placed?'● Live · '+placed+' cities · zoom for more':'No city data', placed>0);
-}
-async function fetchCitiesOverpass(b, zoom){
-  const bbox=`${b.getSouth().toFixed(3)},${b.getWest().toFixed(3)},${b.getNorth().toFixed(3)},${b.getEast().toFixed(3)}`;
-  const types = zoom>=7 ? ['city','town'] : ['city'];
-  const q=`[out:json][timeout:25];(${types.map(t=>`node["place"="${t}"]["name"](${bbox});`).join('')});out 400;`;
-  const ac=new AbortController(); setTimeout(()=>ac.abort(), 15000);
-  const res=await fetch('https://overpass-api.de/api/interpreter', {method:'POST', body:'data='+encodeURIComponent(q), signal:ac.signal});
-  if (!res.ok) throw new Error('overpass');
-  const d=await res.json();
-  const seen=new Set(), list=[];
-  (d.elements||[]).forEach(e=>{
-    if (!e.tags || !e.tags.name || e.lat==null) return;
-    const name=e.tags['name:en']||e.tags.name;
-    const key=name+Math.round(e.lat*5)+Math.round(e.lon*5);
-    if (seen.has(key)) return; seen.add(key);
-    list.push({name, lat:e.lat, lon:e.lon, pop:parseInt((e.tags.population||'').replace(/\D/g,''))||0});
-  });
-  list.sort((a,b)=>b.pop-a.pop);   // biggest cities first
-  return list;
-}
-function fallbackCities(b){
-  return EU_CITIES.filter(c=>b.contains([c[1],c[2]])).map(c=>({name:c[0], lat:c[1], lon:c[2], pop:0}));
+  setOverlay('euOverlay', placed?'● Live · '+placed+' cities · zoom in for detail':'No city data', placed>0);
 }
 async function fetchCityWeather(cities){
   const SIZE=50, chunks=[];
