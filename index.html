@@ -1535,20 +1535,20 @@ function renderWeather(d) {
       </div>`;
     const chartWrap=detail.querySelector('.dd-chart-wrap');
     row.addEventListener('click',()=>{
-      const beforeTop=row.getBoundingClientRect().top;   // where the row sits before any layout change
-      wkGrid.querySelectorAll('.day-detail').forEach(x=>{if(x!==detail)x.classList.add('hidden');});
-      wkGrid.querySelectorAll('.week-row').forEach(x=>{if(x!==row)x.classList.remove('active');});
-      detail.classList.toggle('hidden');
-      const open=!detail.classList.contains('hidden');
-      row.classList.toggle('active',open);
-      if (open && !chartWrap.dataset.built){ chartWrap.appendChild(dayChart(d.hourly, dateStr)); chartWrap.dataset.built='1'; }
-      if (open){
-        // closing another day (often above) shifts the page — instantly compensate so the
-        // tapped row stays put, then smoothly glide it to mid-screen (no jump/wrong-way jank)
-        const delta=row.getBoundingClientRect().top-beforeTop;
-        if (delta) window.scrollBy(0, delta);
-        requestAnimationFrame(()=>row.scrollIntoView({behavior:'smooth', block:'center'}));
-      }
+      // tapping the already-open day just closes it
+      if (!detail.classList.contains('hidden')){ detail.classList.add('hidden'); row.classList.remove('active'); return; }
+      // 1) close any other open day first
+      wkGrid.querySelectorAll('.day-detail').forEach(x=>x.classList.add('hidden'));
+      wkGrid.querySelectorAll('.week-row').forEach(x=>x.classList.remove('active'));
+      // 2) let that settle, 3) smoothly centre the still-collapsed day, 4) then open it
+      setTimeout(()=>{
+        row.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(()=>{
+          detail.classList.remove('hidden');
+          row.classList.add('active');
+          if (!chartWrap.dataset.built){ chartWrap.appendChild(dayChart(d.hourly, dateStr)); chartWrap.dataset.built='1'; }
+        }, 420);
+      }, 80);
     });
     const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
     (i>=7 && farBox ? farBox : wkGrid).appendChild(wrap);
