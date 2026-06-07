@@ -614,7 +614,7 @@ td.rain-c { color: var(--accent3); }
 
 <!-- POPUP / MODAL -->
 <div class="modal hidden" id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-panel" role="dialog" aria-modal="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" onclick="if(!event.target.closest('.dd-chart, .chart-scroll, svg, button, a, input, select'))closeModal()">
     <div class="modal-bar">
       <h3 id="modalTitle">Details</h3>
       <button type="button" class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
@@ -875,8 +875,8 @@ function openTodayModal(){
     ['Pressure', c.surface_pressure!=null?Math.round(c.surface_pressure)+' hPa':'—'],
     ['Cloud cover', (c.cloud_cover??'—')+'%'],
     ['UV index', dy.uv_index_max[0]??'—'],
-    ['Sunrise', fmtTime(sr)],
-    ['Sunset', fmtTime(ss)],
+    ['🌄 Sunrise', fmtTime(sr)],
+    ['🌆 Sunset', fmtTime(ss)],
     ['Daylight', isFinite(daylight)?daylight.toFixed(1)+' h':'—'],
     ['Moon', moon.emoji+' '+moon.name],
   ];
@@ -957,8 +957,8 @@ function openDayModal(i){
     <div class="dd-box"><div class="dd-label">Max Wind</div><div class="dd-val">${W(days.wind_speed_10m_max[i])}</div></div>
     <div class="dd-box"><div class="dd-label">Gusts</div><div class="dd-val">${W(days.wind_gusts_10m_max[i])}</div></div>
     <div class="dd-box"><div class="dd-label">UV Index</div><div class="dd-val" style="color:var(--accent2)">${days.uv_index_max[i]}</div></div>
-    <div class="dd-box"><div class="dd-label">Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
-    <div class="dd-box"><div class="dd-label">Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
+    <div class="dd-box"><div class="dd-label">🌄 Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
+    <div class="dd-box"><div class="dd-label">🌆 Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
   </div>`;
   openModal(`${name} · ${dlbl} · ${ic.d}`, `<div class="dd-chart-host"></div>${grid}`);
   const host=document.querySelector('#modalBody .dd-chart-host');
@@ -1478,7 +1478,9 @@ function renderWeather(d) {
   // Current-hour precipitation probability — matches phone-style "rain now"
   const nowProb = d.hourly.precipitation_probability[start];
 
-  document.getElementById('todayIcon').textContent = wc(cur.weather_code, cur.is_day).i;
+  // Hero "now" icon: use the plain condition icon (sun/cloud/rain) like the
+  // 16-day forecast — not the night-moon variant, even after dark.
+  document.getElementById('todayIcon').textContent = wc(cur.weather_code).i;
   document.getElementById('todayTemp').textContent = T(cur.temperature_2m);
   document.getElementById('todayDesc').textContent = wc(cur.weather_code, cur.is_day).d;
   document.getElementById('todayHi').textContent   = T(day0.hi);
@@ -1539,7 +1541,7 @@ function renderWeather(d) {
     if (nxt) sunEvents.forEach(ev=>{ if (ev.t>=times[i] && ev.t<nxt){
       const sc=document.createElement('div'); sc.className='hour-card sun';
       sc.innerHTML=`<div class="h-time">${ev.rise?'Sunrise':'Sunset'}</div>`
-        +`<div class="h-icon">${ev.rise?'🌅':'🌇'}</div>`
+        +`<div class="h-icon">${ev.rise?'🌄':'🌆'}</div>`
         +`<div class="h-temp">${ev.t.slice(11,16)}</div><div class="h-feels"></div><div class="h-rain"></div>`;
       scroll.appendChild(sc);
     }});
