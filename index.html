@@ -331,7 +331,7 @@ td.rain-c { color: var(--accent3); }
 .tappable:hover { border-color: var(--accent); }
 .tappable:active { transform: scale(0.995); }
 .tap-hint { display: inline-block; font-size: 9px; color: var(--accent); letter-spacing: 0.06em; margin-left: 8px; text-transform: uppercase; border: 1px solid var(--accent); background: rgba(var(--accent-rgb),0.12); border-radius: 99px; padding: 3px 10px; vertical-align: middle; }
-.mini-btn { float: right; min-width: 66px; text-align: center; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: var(--font); font-size: 10px; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
+.mini-btn { float: right; min-width: 66px; height: 26px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: var(--font); font-size: 10px; line-height: 1; letter-spacing: 0.04em; padding: 0 11px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
 .mini-btn:active { opacity: 0.8; }
 
 /* ── MODAL ── */
@@ -504,7 +504,7 @@ td.rain-c { color: var(--accent3); }
 
     <!-- HOURLY -->
     <div class="card" style="animation-delay:0.1s">
-      <div class="card-title accent3">Hourly — Next 24 hours <button type="button" class="mini-btn" onclick="openUvGraph()">☀️ UV</button><button type="button" class="mini-btn" onclick="openRainGraph()">📈 Rain</button></div>
+      <div class="card-title accent3">Hourly — Next 24 hours <button type="button" class="mini-btn" onclick="openUvGraph()">☀️ UV</button><button type="button" class="mini-btn" onclick="openRainGraph()">💧 Rain</button></div>
       <div class="hourly-scroll" id="hourlyScroll"></div>
     </div>
 
