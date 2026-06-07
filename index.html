@@ -645,7 +645,33 @@ async function geocodeQuery(q, count) {
   return [];
 }
 
-// ── FETCH WEATHER ────────────────────────────────────────────────
+// Reverse geocode coordinates → "City, Region, Country" (no API key needed)
+async function reverseGeocode(lat, lon) {
+  try {
+    const c = new AbortController(); setTimeout(()=>c.abort(), 6000);
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`, {signal:c.signal});
+    if (r.ok) {
+      const d = await r.json();
+      const city = d.city || d.locality || d.principalSubdivision;
+      if (city) {
+        const parts = [city];
+        if (d.principalSubdivision && d.principalSubdivision !== city) parts.push(d.principalSubdivision);
+        if (d.countryName) parts.push(d.countryName);
+        return parts.join(', ');
+      }
+    }
+  } catch(e) {}
+  try {
+    const c = new AbortController(); setTimeout(()=>c.abort(), 6000);
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`, {headers:{'Accept-Language':'en'}, signal:c.signal});
+    if (r.ok) {
+      const a = (await r.json()).address || {};
+      const parts = [a.city||a.town||a.village||a.county, a.state, a.country].filter(Boolean);
+      if (parts.length) return parts.join(', ');
+    }
+  } catch(e) {}
+  return '';
+}
 async function loadWeather(lat, lon, label) {
   setLoading(true);
   currentLat=lat; currentLon=lon;
@@ -667,6 +693,7 @@ async function loadWeather(lat, lon, label) {
     setupMonth();
     fetchHistorical();   // auto-show the last 5 years for today
     fetchPollen(lat, lon);
+    try { localStorage.setItem('skycast-last', JSON.stringify({lat, lon, label})); } catch(e){}
   } catch(e) {
     let msg='Could not load weather data.', hint='';
     if (e.name==='AbortError') hint='Request timed out. Check your connection.';
@@ -953,8 +980,30 @@ function showError(msg,hint) {
   el.classList.remove('hidden');
 }
 
+// ── AUTO-LOCATE ON OPEN (iPhone Weather style) ───────────────────
+function gotoCity(lat, lon, label) {
+  cityInput.value = label || '';
+  committedCity = !!label; committedLabel = label || '';
+  loadWeather(lat, lon, label || 'Your location');
+}
+function loadLast() {
+  try {
+    const s = JSON.parse(localStorage.getItem('skycast-last') || 'null');
+    if (s && s.lat != null) gotoCity(s.lat, s.lon, s.label);
+  } catch(e) {}
+}
+function autoLocate() {
+  if (!navigator.geolocation) { loadLast(); return; }
+  navigator.geolocation.getCurrentPosition(
+    async pos => { const {latitude:lat, longitude:lon} = pos.coords; gotoCity(lat, lon, await reverseGeocode(lat, lon)); },
+    () => loadLast(),                                   // denied / unavailable → last city
+    { enableHighAccuracy:false, timeout:8000, maximumAge:600000 }
+  );
+}
+
 // ── INIT ─────────────────────────────────────────────────────────
 setTheme(document.documentElement.getAttribute('data-theme') || 'current');
+autoLocate();   // on open: detect location, else fall back to last searched city
 </script>
 </body>
 </html>
