@@ -235,9 +235,11 @@ body::before {
 .longrange { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 .far { opacity: 0.7; }
 .far:hover { opacity: 0.85; }
-.week-row.best { border-color: var(--accent); box-shadow: 0 0 14px -6px var(--accent); }
-.best-day { font-size: 12px; color: var(--text); background: rgba(var(--accent-rgb),0.08); border: 1px solid rgba(var(--accent-rgb),0.2); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.5; }
-.best-day b { color: var(--accent); }
+/* Best day = gold, kept distinct from the accent 'selected/expanded' state.
+   Extra specificity (.week-grid …) so the gold border wins over :hover/.active. */
+.week-grid .week-row.best { border-color: #ffcf3f; background: rgba(255,207,63,0.10); box-shadow: 0 0 16px -6px #ffcf3f; }
+.best-day { font-size: 12px; color: var(--text); background: rgba(255,207,63,0.10); border: 1px solid rgba(255,207,63,0.32); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; line-height: 1.5; }
+.best-day b { color: #ffcf3f; }
 .week-row { display: grid; grid-template-columns: 90px 38px 1fr 80px; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; cursor: pointer; transition: border-color 0.2s; -webkit-tap-highlight-color: transparent; }
 .week-row:hover, .week-row.active { border-color: var(--accent); }
 .wr-day { font-size: 12px; font-weight: 500; }
@@ -733,8 +735,8 @@ function dayChart(hourly, dateStr){
   const hrs=idx.map(k=>+hourly.time[k].slice(11,13));
   const haveFeels=feels.some(v=>v!=null);
   const step=n>=18?2:1;                       // label every 2 hours for clarity
-  const W=340,H=198,L=12,R=12;
-  const iconsY=14, plotTop=48, plotBot=H-62, hoursY=H-46, feelsY=H-28, rainY=H-11;
+  const W=340,H=178,L=12,R=12;
+  const iconsY=14, plotTop=56, plotBot=H-38, hoursY=H-24, rainY=H-9;
   const allT=temp.concat(haveFeels?feels.filter(v=>v!=null):[]);
   let tMin=Math.min(...allT), tMax=Math.max(...allT); if(tMin===tMax){tMin-=1;tMax+=1;}
   const x=i=> L+(W-L-R)*(n<=1?0.5:i/(n-1));
@@ -750,26 +752,25 @@ function dayChart(hourly, dateStr){
   const area=`M${x(0).toFixed(1)} ${plotBot} L`+pts.join(' L')+` L${x(n-1).toFixed(1)} ${plotBot} Z`;
   const line='M'+pts.join(' L');
   let fline=''; if(haveFeels){ feels.forEach((t,i)=>{ if(t==null)return; fline+=(fline?' L':'M')+x(i).toFixed(1)+' '+y(t).toFixed(1); }); }
-  // per-step: icon (top), temp dot+value (on graph), hour / feels / rain rows (below)
-  let icons='',dots='',tlab='',hours='',frow='',rrow='';
+  // per-step: icon (top); feels-like in parentheses above the actual temp; hour & rain rows below
+  let icons='',dots='',tlab='',hours='',rrow='';
   for(let i=0;i<n;i+=step){
-    const xi=x(i).toFixed(1);
+    const xi=x(i).toFixed(1), ty=y(temp[i]);
     icons+=`<text x="${xi}" y="${iconsY}" text-anchor="middle" font-size="13">${wc(code[i],isday[i]).i}</text>`;
-    dots +=`<circle cx="${xi}" cy="${y(temp[i]).toFixed(1)}" r="2" fill="var(--accent)"/>`;
-    tlab +=`<text x="${xi}" y="${(y(temp[i])-6).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="var(--text)">${Math.round(temp[i])}°</text>`;
+    dots +=`<circle cx="${xi}" cy="${ty.toFixed(1)}" r="2" fill="var(--accent)"/>`;
+    if(haveFeels&&feels[i]!=null) tlab+=`<text x="${xi}" y="${(ty-15).toFixed(1)}" text-anchor="middle" font-size="7.5" fill="var(--accent2)">(${Math.round(feels[i])}°)</text>`;
+    tlab +=`<text x="${xi}" y="${(ty-6).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="var(--text)">${Math.round(temp[i])}°</text>`;
     hours+=`<text x="${xi}" y="${hoursY}" text-anchor="middle" font-size="8" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`;
-    if(haveFeels&&feels[i]!=null) frow+=`<text x="${xi}" y="${feelsY}" text-anchor="middle" font-size="8" fill="var(--accent2)">${Math.round(feels[i])}°</text>`;
     rrow+=`<text x="${xi}" y="${rainY}" text-anchor="middle" font-size="8" fill="var(--accent3)">${prob[i]>0?prob[i]+'%':'·'}</text>`;
   }
-  // row labels on the far left
-  const rowTags=`<text x="0" y="${feelsY}" font-size="7" fill="var(--accent2)">≈</text><text x="0" y="${rainY}" font-size="7" fill="var(--accent3)">☂</text>`;
-  const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>Feels like ≈</span>':''}<span><i style="background:var(--accent3)"></i>Rain % ☂</span></div>`;
+  const rowTags=`<text x="0" y="${rainY}" font-size="7" fill="var(--accent3)">☂</text>`;
+  const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>(feels like)</span>':''}<span><i style="background:var(--accent3)"></i>Rain % ☂</span></div>`;
   return `<div class="dd-chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">`
     +`<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0.30"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
     +shade
     +`<path d="${area}" fill="url(#tg)"/><path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`
     +(haveFeels?`<path d="${fline}" fill="none" stroke="var(--accent2)" stroke-width="1.4" stroke-dasharray="4 3"/>`:'')
-    +dots+icons+tlab+hours+frow+rrow+rowTags+`</svg>`+legend+`</div>`;
+    +dots+icons+tlab+hours+rrow+rowTags+`</svg>`+legend+`</div>`;
 }
 
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
