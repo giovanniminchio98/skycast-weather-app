@@ -200,6 +200,9 @@ body::before {
 
 /* 7-DAY */
 .week-grid { display: flex; flex-direction: column; gap: 6px; }
+.week-divider { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 12px 4px 4px; border-top: 1px dashed var(--border); margin-top: 4px; }
+.far { opacity: 0.6; }
+.far:hover { opacity: 0.85; }
 .week-row { display: grid; grid-template-columns: 90px 38px 1fr 80px; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; cursor: pointer; transition: border-color 0.2s; -webkit-tap-highlight-color: transparent; }
 .week-row:hover, .week-row.active { border-color: var(--accent); }
 .wr-day { font-size: 12px; font-weight: 500; }
@@ -423,7 +426,7 @@ td.rain-c { color: var(--accent3); }
     <!-- FORECAST -->
     <div class="card" style="animation-delay:0.15s">
       <div class="card-title accent2">16-Day Forecast</div>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:0.04em;">Tap any day to expand details.</p>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:0.04em;">Tap any day for details · days past a week are long-range estimates and can be off.</p>
       <div class="week-grid" id="weekGrid"></div>
     </div>
 
@@ -949,6 +952,11 @@ function renderWeather(d) {
   const days=d.daily;
   const gMin=Math.min(...days.temperature_2m_min), gMax=Math.max(...days.temperature_2m_max), range=gMax-gMin||1;
   days.time.forEach((dateStr,i)=>{
+    if (i===7) {   // everything past a week is long-range / low confidence
+      const div=document.createElement('div'); div.className='week-divider';
+      div.textContent='Beyond 7 days · long-range estimate, low confidence';
+      wkGrid.appendChild(div);
+    }
     const date=new Date(dateStr+'T12:00:00');
     const name=i===0?'Today':date.toLocaleDateString('en-US',{weekday:'short'});
     const dlbl=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
@@ -983,7 +991,7 @@ function renderWeather(d) {
       detail.classList.toggle('hidden');
       row.classList.toggle('active',!detail.classList.contains('hidden'));
     });
-    const wrap=document.createElement('div'); wrap.appendChild(row); wrap.appendChild(detail);
+    const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
     wkGrid.appendChild(wrap);
   });
 }
