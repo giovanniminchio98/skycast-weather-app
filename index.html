@@ -263,6 +263,38 @@ td.rain-c { color: var(--accent3); }
 .pollen-note { font-size: 12px; color: var(--muted); line-height: 1.6; }
 .pollen-disc { font-size: 10px; color: var(--muted); opacity: 0.7; margin-top: 12px; letter-spacing: 0.03em; }
 
+/* ── AIR QUALITY ── */
+.aq-head { display: flex; align-items: center; gap: 14px; }
+.aq-badge { font-size: 20px; font-weight: 600; min-width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #0e0e0e; padding: 0 6px; }
+.aq-label { font-size: 14px; font-weight: 500; }
+.aq-scale { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.aq-1 { background: #5bbd6b; } .aq-2 { background: #9bd14a; } .aq-3 { background: #e6c93f; }
+.aq-4 { background: #e8923a; } .aq-5 { background: #e2574c; } .aq-6 { background: #a3475c; color: #fff; }
+
+/* ── TAPPABLE / HINTS ── */
+.tappable { cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
+.tappable:hover { border-color: var(--accent); }
+.tappable:active { transform: scale(0.995); }
+.tap-hint { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; margin-left: 6px; text-transform: none; }
+.mini-btn { float: right; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
+.mini-btn:active { opacity: 0.8; }
+
+/* ── MODAL ── */
+.modal { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,0.55); opacity: 0; transition: opacity 0.2s; padding: 0; }
+.modal.show { opacity: 1; }
+@media (min-width: 600px) { .modal { align-items: center; padding: 20px; } }
+.modal-panel { background: var(--card); border: 1px solid var(--border); border-radius: 18px 18px 0 0; backdrop-filter: blur(var(--card-blur)); width: 100%; max-width: 560px; max-height: 86vh; overflow-y: auto; padding: 20px; transform: translateY(24px); transition: transform 0.25s cubic-bezier(.4,0,.2,1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5); }
+.modal.show .modal-panel { transform: none; }
+@media (min-width: 600px) { .modal-panel { border-radius: 18px; } }
+.modal-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.modal-bar h3 { font-family: var(--display); font-style: italic; font-size: 20px; font-weight: 400; }
+:root[data-theme="ai"] .modal-bar h3 { font-style: normal; }
+.modal-close { background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 13px; }
+.modal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 8px; }
+.modal-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+.modal-note b { color: var(--accent); }
+.chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 8px; }
+
 /* ── MONTH OVERVIEW (calendar) ── */
 .mo-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin-bottom: 16px; }
 .mo-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; }
@@ -352,8 +384,8 @@ td.rain-c { color: var(--accent3); }
   <div id="weatherContent" class="hidden">
 
     <!-- TODAY -->
-    <div class="card" style="animation-delay:0.05s">
-      <div class="card-title accent" id="todayTitle">Today</div>
+    <div class="card tappable" id="todayCard" style="animation-delay:0.05s" onclick="openTodayModal()">
+      <div class="card-title accent"><span id="todayTitle">Today</span> <span class="tap-hint">tap for details ›</span></div>
       <div class="today-main">
         <div class="today-icon" id="todayIcon"></div>
         <div>
@@ -363,6 +395,7 @@ td.rain-c { color: var(--accent3); }
           <div class="today-local" id="todayLocal"></div>
         </div>
       </div>
+      <div class="stat-row"><span class="label">Feels like</span><span class="value accent" id="sFeels"></span></div>
       <div class="stat-row"><span class="label">Humidity</span><span class="value accent3" id="sHum"></span></div>
       <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
       <div class="stat-row hidden" id="rowRain"><span class="label">Rain Chance (now)</span><span class="value accent3" id="sRain"></span></div>
@@ -371,8 +404,14 @@ td.rain-c { color: var(--accent3); }
 
     <!-- HOURLY -->
     <div class="card" style="animation-delay:0.1s">
-      <div class="card-title accent3">Hourly — Next 24 hours</div>
+      <div class="card-title accent3">Hourly — Next 24 hours <button type="button" class="mini-btn" onclick="openRainGraph()">📈 Rain graph</button></div>
       <div class="hourly-scroll" id="hourlyScroll"></div>
+    </div>
+
+    <!-- AIR QUALITY -->
+    <div class="card" id="airCard" style="animation-delay:0.12s" onclick="openAirModal()">
+      <div class="card-title accent3">Air Quality — Today</div>
+      <div id="airBody"></div>
     </div>
 
     <!-- POLLEN -->
@@ -381,9 +420,9 @@ td.rain-c { color: var(--accent3); }
       <div id="pollenBody"></div>
     </div>
 
-    <!-- 7-DAY -->
+    <!-- FORECAST -->
     <div class="card" style="animation-delay:0.15s">
-      <div class="card-title accent2">7-Day Forecast</div>
+      <div class="card-title accent2">16-Day Forecast</div>
       <p style="font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:0.04em;">Tap any day to expand details.</p>
       <div class="week-grid" id="weekGrid"></div>
     </div>
@@ -424,6 +463,17 @@ td.rain-c { color: var(--accent3); }
   </div>
 
   <div class="disclaimer">SkyCast · Open-Meteo · Forecasts are estimates · Not for safety-critical use</div>
+</div>
+
+<!-- POPUP / MODAL -->
+<div class="modal hidden" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-panel" role="dialog" aria-modal="true">
+    <div class="modal-bar">
+      <h3 id="modalTitle">Details</h3>
+      <button type="button" class="modal-close" onclick="closeModal()" aria-label="Close">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -482,9 +532,132 @@ function pollenLevel(v, t){
   return 4;                        // very high
 }
 
+// ── EXTRA HELPERS ────────────────────────────────────────────────
+const F  = c => (c==null?'—':Math.round(c)+'°C');     // feels-like etc.
+const deg= d => (d==null?'—':Math.round(d)+'°');
+const COMPASS=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const windDir = d => d==null ? '' : COMPASS[Math.round(d/22.5)%16];
+
+// Moon phase (not in most weather apps). Returns emoji + name.
+function moonPhase(date){
+  const syn=29.530588853, knownNew=Date.UTC(2000,0,6,18,14);
+  let age=(((date.getTime()-knownNew)/86400000)%syn+syn)%syn;
+  const names=[[1.85,'🌑','New moon'],[5.54,'🌒','Waxing crescent'],[9.23,'🌓','First quarter'],
+    [12.91,'🌔','Waxing gibbous'],[16.61,'🌕','Full moon'],[20.30,'🌖','Waning gibbous'],
+    [23.99,'🌗','Last quarter'],[27.68,'🌘','Waning crescent'],[30,'🌑','New moon']];
+  for (const [max,emoji,name] of names) if (age<max) return {emoji,name,age:Math.round(age)};
+  return {emoji:'🌑',name:'New moon',age:0};
+}
+
+// Smarter day icon: the API's daily code is the day's *worst* weather, so sunny
+// days with one shower looked gloomy. Look at the daylight hours and prefer sun
+// when the day is genuinely sunny (and not actually rainy).
+function dayIcon(hourly, dateStr, dailyCode){
+  if (!hourly || !hourly.time) return wc(dailyCode);
+  let clear=0, wet=0, total=0;
+  for (let i=0;i<hourly.time.length;i++){
+    if (!hourly.time[i].startsWith(dateStr)) continue;
+    if (hourly.is_day[i]!==1) continue;            // daylight only
+    total++;
+    const code=hourly.weather_code[i];
+    if (isWet(code)) wet++;
+    else if (code===0||code===1) clear++;
+  }
+  if (total===0) return wc(dailyCode);
+  if (wet<3 && clear>=5) return {i:'☀️', d:'Sunny'};
+  if (wet<3 && clear>=2) return {i:'🌤️', d:'Sun & clouds'};
+  return wc(dailyCode);                              // rainy / cloudy / fog → keep API icon
+}
+
+// ── MODAL / POPUP ────────────────────────────────────────────────
+function openModal(title, html){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=html;
+  const m=document.getElementById('modal');
+  m.classList.remove('hidden');
+  requestAnimationFrame(()=>m.classList.add('show'));
+}
+function closeModal(){
+  const m=document.getElementById('modal');
+  m.classList.remove('show');
+  setTimeout(()=>m.classList.add('hidden'),200);
+}
+
+// Tiny inline SVG bar chart (used for the hourly rain graph)
+function barChart(labels, values, opts={}){
+  const W=Math.max(labels.length*26,320), H=150, pad=24, top=14;
+  const max=Math.max(opts.max||0, ...values, 1);
+  const bw=(W-pad*2)/labels.length;
+  let bars='', axis='';
+  values.forEach((v,i)=>{
+    const h=(v/max)*(H-top-pad);
+    const x=pad+i*bw, y=H-pad-h;
+    bars+=`<rect x="${(x+bw*0.18).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.64).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="var(--accent3)"><title>${labels[i]}: ${v}${opts.unit||''}</title></rect>`;
+    if (i%3===0) axis+=`<text x="${(x+bw/2).toFixed(1)}" y="${H-7}" text-anchor="middle" font-size="9" fill="var(--muted)">${labels[i]}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="min-width:${W}px">`
+    + `<text x="4" y="12" font-size="9" fill="var(--muted)">${max}${opts.unit||''}</text>${bars}${axis}</svg>`;
+}
+
 let currentLat=null, currentLon=null, acTimer=null, acResults=[], acFocused=-1;
 let committedCity=false, committedLabel='';   // a city is shown in the box; first keystroke replaces it
+let WX=null, histAvg=null;                     // last forecast payload + 5-yr average (for popups)
 const cityInput = document.getElementById('cityInput');
+
+// Detailed "now" popup: feels-like, wind+gusts, humidity, dew point, pressure,
+// cloud cover, UV, sunrise/sunset, daylight length, moon phase, vs-average.
+function openTodayModal(){
+  if (!WX) return;
+  const c=WX.current, dy=WX.daily;
+  const sr=dy.sunrise[0], ss=dy.sunset[0];
+  const daylight=(new Date(ss)-new Date(sr))/3600000;
+  const moon=moonPhase(new Date(c.time||Date.now()));
+  const boxes=[
+    ['Feels like', F(c.apparent_temperature)],
+    ['Humidity', (c.relative_humidity_2m??'—')+'%'],
+    ['Dew point', F(dewNow())],
+    ['Wind', W(c.wind_speed_10m)+(windDir(c.wind_direction_10m)?' '+windDir(c.wind_direction_10m):'')],
+    ['Gusts', W(c.wind_gusts_10m)],
+    ['Pressure', c.surface_pressure!=null?Math.round(c.surface_pressure)+' hPa':'—'],
+    ['Cloud cover', (c.cloud_cover??'—')+'%'],
+    ['UV index', dy.uv_index_max[0]??'—'],
+    ['Sunrise', fmtTime(sr)],
+    ['Sunset', fmtTime(ss)],
+    ['Daylight', isFinite(daylight)?daylight.toFixed(1)+' h':'—'],
+    ['Moon', moon.emoji+' '+moon.name],
+  ];
+  let html='';
+  if (histAvg) {
+    const dHi=dy.temperature_2m_max[0]-histAvg.hi;
+    const sign=dHi>=0?'+':'';
+    html+=`<p class="modal-note">Today's high is <b>${sign}${dHi.toFixed(1)}°</b> vs the 5-year average (${T(histAvg.hi)}) for this date.</p>`;
+  }
+  html+='<div class="modal-grid">'+boxes.map(([k,v])=>`<div class="dd-box"><div class="dd-label">${k}</div><div class="dd-val">${v}</div></div>`).join('')+'</div>';
+  openModal('Right now in detail', html);
+}
+function dewNow(){
+  if (!WX) return null;
+  const i=WX.hourly.time.findIndex(t=>t.slice(0,13)===(WX.current.time||'').slice(0,13));
+  return i>=0 ? WX.hourly.dew_point_2m[i] : null;
+}
+
+// Hour-by-hour rain graph for the rest of today (probability + amount).
+function openRainGraph(){
+  if (!WX) return;
+  const H=WX.hourly, today=(WX.current.time||H.time[0]).slice(0,10);
+  const labels=[], probs=[], amts=[];
+  for (let i=0;i<H.time.length;i++){
+    if (!H.time[i].startsWith(today)) continue;
+    labels.push(H.time[i].slice(11,16));
+    probs.push(H.precipitation_probability[i]??0);
+    amts.push(+(H.precipitation[i]??0).toFixed(1));
+  }
+  const totalRain=amts.reduce((s,v)=>s+v,0).toFixed(1);
+  let html=`<p class="modal-note">Chance of rain per hour today · expected total <b>${totalRain} mm</b></p>`;
+  html+='<div class="chart-scroll">'+barChart(labels, probs, {unit:'%', max:100})+'</div>';
+  html+='<p class="pollen-disc">Bars show hourly probability of precipitation (≥0.1 mm).</p>';
+  openModal('Rain — hour by hour', html);
+}
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
@@ -677,10 +850,10 @@ async function loadWeather(lat, lon, label) {
   currentLat=lat; currentLon=lon;
   const url = 'https://api.open-meteo.com/v1/forecast'
     + '?latitude='+lat+'&longitude='+lon
-    + '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,uv_index,is_day'
-    + '&hourly=temperature_2m,weather_code,precipitation_probability,is_day'
-    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset'
-    + '&timezone=auto&forecast_days=7&models=best_match';
+    + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index,is_day,cloud_cover,surface_pressure'
+    + '&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,dew_point_2m,weather_code,precipitation,precipitation_probability,wind_speed_10m,is_day'
+    + '&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,uv_index_max,sunrise,sunset'
+    + '&timezone=auto&forecast_days=16&models=best_match';
   try {
     const c = new AbortController(); setTimeout(()=>c.abort(),10000);
     const res = await fetch(url, {signal:c.signal});
@@ -692,7 +865,7 @@ async function loadWeather(lat, lon, label) {
     setupHistorical();
     setupMonth();
     fetchHistorical();   // auto-show the last 5 years for today
-    fetchPollen(lat, lon);
+    fetchAir(lat, lon);
     try { localStorage.setItem('skycast-last', JSON.stringify({lat, lon, label})); } catch(e){}
   } catch(e) {
     let msg='Could not load weather data.', hint='';
@@ -706,6 +879,7 @@ async function loadWeather(lat, lon, label) {
 // ── RENDER ───────────────────────────────────────────────────────
 function renderWeather(d) {
   setLoading(false);
+  WX=d; histAvg=null;
   document.getElementById('placeholder').classList.add('hidden');
   document.getElementById('errorMsg').classList.add('hidden');
   document.getElementById('weatherContent').classList.remove('hidden');
@@ -730,8 +904,9 @@ function renderWeather(d) {
   document.getElementById('todayDesc').textContent = wc(cur.weather_code, cur.is_day).d;
   document.getElementById('todayHi').textContent   = T(day0.hi);
   document.getElementById('todayLo').textContent   = T(day0.lo);
+  document.getElementById('sFeels').textContent = F(cur.apparent_temperature);
   document.getElementById('sHum').textContent  = cur.relative_humidity_2m + '%';
-  document.getElementById('sWind').textContent = W(cur.wind_speed_10m);
+  document.getElementById('sWind').textContent = W(cur.wind_speed_10m) + (windDir(cur.wind_direction_10m) ? ' ' + windDir(cur.wind_direction_10m) : '');
   document.getElementById('sUV').textContent   = day0.uv ?? '—';
 
   // Local time at the searched location (fixes timezone misalignment)
@@ -781,18 +956,23 @@ function renderWeather(d) {
     const barL=((lo-gMin)/range*100).toFixed(1), barW=((hi-lo)/range*100).toFixed(1);
     const rainP=days.precipitation_probability_max[i];
     const wet=isWet(days.weather_code[i]);
+    const ic=dayIcon(d.hourly, dateStr, days.weather_code[i]);   // smarter sun-aware icon
     const row=document.createElement('div'); row.className='week-row';
     row.innerHTML=`<div class="wr-day">${name}<small>${dlbl}</small></div>
-      <div class="wr-icon">${wc(days.weather_code[i]).i}</div>
+      <div class="wr-icon">${ic.i}</div>
       <div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%"></div></div>
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
     const detail=document.createElement('div'); detail.className='day-detail hidden';
-    detail.innerHTML=`<div class="day-detail-title">${name} · ${dlbl} · ${wc(days.weather_code[i]).d}</div>
+    detail.innerHTML=`<div class="day-detail-title">${name} · ${dlbl} · ${ic.d}</div>
       <div class="dd-grid">
         <div class="dd-box"><div class="dd-label">High</div><div class="dd-val" style="color:var(--accent)">${T(hi)}</div></div>
         <div class="dd-box"><div class="dd-label">Low</div><div class="dd-val" style="color:var(--accent3)">${T(lo)}</div></div>
+        <div class="dd-box"><div class="dd-label">Feels max</div><div class="dd-val">${F(days.apparent_temperature_max[i])}</div></div>
+        <div class="dd-box"><div class="dd-label">Feels min</div><div class="dd-val">${F(days.apparent_temperature_min[i])}</div></div>
         ${wet?`<div class="dd-box"><div class="dd-label">Rain %</div><div class="dd-val">${rainP??0}%</div></div>`:''}
+        ${wet?`<div class="dd-box"><div class="dd-label">Rain total</div><div class="dd-val">${days.precipitation_sum[i]!=null?days.precipitation_sum[i].toFixed(1)+' mm':'—'}</div></div>`:''}
         <div class="dd-box"><div class="dd-label">Max Wind</div><div class="dd-val">${W(days.wind_speed_10m_max[i])}</div></div>
+        <div class="dd-box"><div class="dd-label">Gusts</div><div class="dd-val">${W(days.wind_gusts_10m_max[i])}</div></div>
         <div class="dd-box"><div class="dd-label">UV Index</div><div class="dd-val" style="color:var(--accent2)">${days.uv_index_max[i]}</div></div>
         <div class="dd-box"><div class="dd-label">Sunrise</div><div class="dd-val">${fmtTime(days.sunrise[i])}</div></div>
         <div class="dd-box"><div class="dd-label">Sunset</div><div class="dd-val">${fmtTime(days.sunset[i])}</div></div>
@@ -841,39 +1021,89 @@ async function fetchHistorical() {
   document.getElementById('histLoading').classList.add('hidden');
   if (!rows.length) { document.getElementById('histError').innerHTML='No historical data found for that date.'; document.getElementById('histError').classList.remove('hidden'); return; }
   rows.sort((a,b)=>b.year-a.year);
+  // 5-year average for this date → powers the "vs normal" line in the Today popup
+  const his=rows.map(r=>r.hi).filter(v=>v!=null), los=rows.map(r=>r.lo).filter(v=>v!=null);
+  if (his.length && dateVal === new Date().toISOString().slice(0,10)) {
+    histAvg = { hi: his.reduce((s,v)=>s+v,0)/his.length, lo: los.reduce((s,v)=>s+v,0)/los.length };
+  }
   let html=`<thead><tr><th>Year</th><th style="text-align:left">Condition</th><th>High</th><th>Low</th><th>Rain mm</th><th>Wind</th></tr></thead><tbody>`;
   rows.forEach(r=>{html+=`<tr><td>${r.year}</td><td style="text-align:left">${wc(r.code).i} ${wc(r.code).d}</td><td class="hi-c">${T(r.hi)}</td><td class="lo-c">${T(r.lo)}</td><td class="rain-c">${r.rain!=null?r.rain.toFixed(1):'—'}</td><td>${W(r.wind)}</td></tr>`;});
   document.getElementById('histTable').innerHTML=html+'</tbody>';
   document.getElementById('histResults').classList.remove('hidden');
 }
 
-// ── POLLEN ───────────────────────────────────────────────────────
-async function fetchPollen(lat, lon) {
-  const body=document.getElementById('pollenBody');
-  body.innerHTML='<div class="loading"><div class="spinner"></div> Loading pollen…</div>';
+// ── AIR QUALITY + POLLEN ─────────────────────────────────────────
+let AQ=null;   // last pollutant readings, for the breakdown popup
+function aqiInfo(eu, us){
+  if (eu!=null){
+    for (const [max,label,cls] of [[20,'Good','aq-1'],[40,'Fair','aq-2'],[60,'Moderate','aq-3'],[80,'Poor','aq-4'],[100,'Very poor','aq-5'],[Infinity,'Extremely poor','aq-6']])
+      if (eu<=max) return {val:Math.round(eu), label, cls, scale:'European AQI'};
+  }
+  if (us!=null){
+    for (const [max,label,cls] of [[50,'Good','aq-1'],[100,'Moderate','aq-2'],[150,'Unhealthy (sensitive)','aq-3'],[200,'Unhealthy','aq-4'],[300,'Very unhealthy','aq-5'],[Infinity,'Hazardous','aq-6']])
+      if (us<=max) return {val:Math.round(us), label, cls, scale:'US AQI'};
+  }
+  return null;
+}
+async function fetchAir(lat, lon) {
+  const pollenBody=document.getElementById('pollenBody');
+  const airBody=document.getElementById('airBody');
+  pollenBody.innerHTML='<div class="loading"><div class="spinner"></div> Loading pollen…</div>';
+  airBody.innerHTML='<div class="loading"><div class="spinner"></div> Loading air quality…</div>';
   try {
     const c=new AbortController(); setTimeout(()=>c.abort(),9000);
-    const vars=Object.keys(POLLEN).join(',');
+    const vars=Object.keys(POLLEN).join(',')+',european_aqi,us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide';
     const url=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=${vars}&timezone=auto`;
     const r=await fetch(url,{signal:c.signal}); if(!r.ok) throw new Error('HTTP '+r.status);
     const cur=(await r.json()).current||{};
-    const items=Object.entries(POLLEN)
-      .map(([k,info])=>({name:info.name, val:cur[k], lvl:pollenLevel(cur[k], info.t)}))
-      .filter(it=>it.val!=null);
-    if (!items.length) { body.innerHTML='<p class="pollen-note">Pollen data is available for European locations only.</p>'; return; }
-    items.sort((a,b)=>b.lvl-a.lvl || b.val-a.val);
-    const worst=items[0], wL=POLLEN_LEVELS[worst.lvl];
-    let html=`<p class="pollen-summary">Highest today: <b>${worst.name}</b> <span class="pollen-pill ${wL.cls}">${wL.label}</span></p><div class="pollen-grid">`;
-    items.forEach(it=>{
-      const L=POLLEN_LEVELS[it.lvl];
-      html+=`<div class="pollen-item"><div class="pollen-name">${it.name}</div>`
-          + `<div class="pollen-val">${Math.round(it.val)} <span style="font-size:10px;color:var(--muted)">grains/m³</span></div>`
-          + `<span class="pollen-pill ${L.cls}">${L.label}</span></div>`;
-    });
-    body.innerHTML=html+'</div><p class="pollen-disc">Approximate severity · source: CAMS via Open-Meteo Air Quality</p>';
+    AQ=cur;
+    renderAir(cur);
+    renderPollen(cur);
   } catch(e) {
-    body.innerHTML='<p class="pollen-note">Pollen data is unavailable right now.</p>';
+    airBody.innerHTML='<p class="pollen-note">Air-quality data is unavailable right now.</p>';
+    pollenBody.innerHTML='<p class="pollen-note">Pollen data is unavailable right now.</p>';
   }
+}
+function renderAir(cur) {
+  const airBody=document.getElementById('airBody'), card=document.getElementById('airCard');
+  const info=aqiInfo(cur.european_aqi, cur.us_aqi);
+  if (!info) { airBody.innerHTML='<p class="pollen-note">Air-quality data is unavailable for this location.</p>'; card.classList.remove('tappable'); return; }
+  airBody.innerHTML=`<div class="aq-head"><span class="aq-badge ${info.cls}">${info.val}</span>`
+    + `<div><div class="aq-label">${info.label}</div><div class="aq-scale">${info.scale}</div></div></div>`
+    + `<p class="pollen-disc">PM₂.₅ ${fmtUg(cur.pm2_5)} · PM₁₀ ${fmtUg(cur.pm10)} · tap for full breakdown</p>`;
+  card.classList.add('tappable');
+}
+function renderPollen(cur) {
+  const body=document.getElementById('pollenBody');
+  const items=Object.entries(POLLEN)
+    .map(([k,info])=>({name:info.name, val:cur[k], lvl:pollenLevel(cur[k], info.t)}))
+    .filter(it=>it.val!=null);
+  if (!items.length) { body.innerHTML='<p class="pollen-note">Pollen data is available for European locations only.</p>'; return; }
+  items.sort((a,b)=>b.lvl-a.lvl || b.val-a.val);
+  const worst=items[0], wL=POLLEN_LEVELS[worst.lvl];
+  let html=`<p class="pollen-summary">Highest today: <b>${worst.name}</b> <span class="pollen-pill ${wL.cls}">${wL.label}</span></p><div class="pollen-grid">`;
+  items.forEach(it=>{
+    const L=POLLEN_LEVELS[it.lvl];
+    html+=`<div class="pollen-item"><div class="pollen-name">${it.name}</div>`
+        + `<div class="pollen-val">${Math.round(it.val)} <span style="font-size:10px;color:var(--muted)">grains/m³</span></div>`
+        + `<span class="pollen-pill ${L.cls}">${L.label}</span></div>`;
+  });
+  body.innerHTML=html+'</div><p class="pollen-disc">Approximate severity · source: CAMS via Open-Meteo Air Quality</p>';
+}
+const fmtUg = v => v==null ? '—' : Math.round(v)+' µg/m³';
+function openAirModal() {
+  if (!AQ) return;
+  const info=aqiInfo(AQ.european_aqi, AQ.us_aqi);
+  const rows=[
+    ['PM₂.₅', fmtUg(AQ.pm2_5)], ['PM₁₀', fmtUg(AQ.pm10)],
+    ['Ozone (O₃)', fmtUg(AQ.ozone)], ['Nitrogen dioxide (NO₂)', fmtUg(AQ.nitrogen_dioxide)],
+    ['Sulphur dioxide (SO₂)', fmtUg(AQ.sulphur_dioxide)], ['Carbon monoxide (CO)', fmtUg(AQ.carbon_monoxide)],
+  ];
+  let html='';
+  if (info) html+=`<div class="aq-head" style="margin-bottom:16px"><span class="aq-badge ${info.cls}">${info.val}</span><div><div class="aq-label">${info.label}</div><div class="aq-scale">${info.scale}</div></div></div>`;
+  html+='<div class="modal-grid">'+rows.map(([k,v])=>`<div class="dd-box"><div class="dd-label">${k}</div><div class="dd-val">${v}</div></div>`).join('')+'</div>';
+  html+='<p class="pollen-disc">Source: CAMS via Open-Meteo Air Quality</p>';
+  openModal('Air quality breakdown', html);
 }
 
 // ── PAST MONTH OVERVIEW ──────────────────────────────────────────
@@ -1003,6 +1233,7 @@ function autoLocate() {
 
 // ── INIT ─────────────────────────────────────────────────────────
 setTheme(document.documentElement.getAttribute('data-theme') || 'current');
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
 autoLocate();   // on open: detect location, else fall back to last searched city
 </script>
 </body>
