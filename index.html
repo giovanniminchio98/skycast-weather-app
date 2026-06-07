@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <script>try{var t=localStorage.getItem('skycast-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&family=Chakra+Petch:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -23,6 +23,8 @@
    · minimal    – super-minimalist light monochrome
    · live        – background reflects the current weather (rain/sun/snow…)
    · ai         – "Neural" teal/blue AI-entity look + live synapse canvas  */
+
+:root { --font: 'DM Mono', monospace; }   /* default UI font (overridden per theme) */
 
 :root[data-theme="current"] {
   --bg:#0e0e0e; --surface:#161616; --card:#1c1c1c; --border:#2a2a2a;
@@ -51,12 +53,13 @@
   --text:#e6fff8; --muted:#7fb8b0; --bull:#16efc6; --bear:#ff7a85;
   --accent-rgb:22,239,198; --accent3-rgb:94,234,212;
   --radius:14px; --display:'Orbitron'; --card-blur:14px;
+  --font:'Chakra Petch', 'Share Tech Mono', monospace;   /* futuristic, readable */
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; }
 body {
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font);
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -130,7 +133,7 @@ body::before {
 .theme-switch { display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; }
 .theme-switch button {
   background: transparent; border: none; cursor: pointer;
-  color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px;
+  color: var(--muted); font-family: var(--font); font-size: 11px;
   letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 14px; border-radius: 99px;
   transition: all 0.2s; -webkit-tap-highlight-color: transparent;
 }
@@ -168,7 +171,7 @@ body::before {
 .search-input-wrap input {
   width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
   padding: 13px 14px 13px 42px; color: var(--text);
-  font-family: 'DM Mono', monospace; font-size: 1rem; outline: none;
+  font-family: var(--font); font-size: 1rem; outline: none;
   transition: border-color 0.2s; -webkit-appearance: none;
   backdrop-filter: blur(var(--card-blur)); -webkit-backdrop-filter: blur(var(--card-blur));
 }
@@ -178,6 +181,14 @@ body::before {
 
 /* AUTOCOMPLETE */
 .ac-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); z-index: 200; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+/* The translucent Live/Neural themes make the search hard to read — make the
+   input and suggestions more solid for those two only. */
+:root[data-theme="live"] .search-input-wrap input { background: rgba(14,20,34,0.86); }
+:root[data-theme="ai"]   .search-input-wrap input { background: rgba(4,16,18,0.88); }
+:root[data-theme="live"] .ac-list { background: rgba(14,20,34,0.94); }
+:root[data-theme="ai"]   .ac-list { background: rgba(4,16,18,0.95); }
+:root[data-theme="live"] .ac-item:hover, :root[data-theme="live"] .ac-item.focused,
+:root[data-theme="ai"]   .ac-item:hover, :root[data-theme="ai"]   .ac-item.focused { background: rgba(255,255,255,0.10); }
 .ac-item { padding: 11px 14px; cursor: pointer; font-size: 12px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
 .ac-item:last-child { border-bottom: none; }
 .ac-item .ac-city { font-weight: 500; color: var(--text); }
@@ -186,7 +197,7 @@ body::before {
 .ac-item:hover .ac-city, .ac-item.focused .ac-city { color: var(--accent); }
 .ac-loading { padding: 12px 14px; font-size: 11px; color: var(--muted); text-align: center; }
 
-.btn-search { background: var(--accent); border: none; border-radius: 10px; color: var(--bg); font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 0 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.2s; white-space: nowrap; }
+.btn-search { background: var(--accent); border: none; border-radius: 10px; color: var(--bg); font-family: var(--font); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 0 20px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.2s; white-space: nowrap; }
 .btn-search:active { opacity: 0.85; }
 
 /* NOTICE */
@@ -230,7 +241,7 @@ body::before {
 
 /* 7-DAY */
 .week-grid { display: flex; flex-direction: column; gap: 6px; }
-.longrange-toggle { width: 100%; margin-top: 8px; background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.longrange-toggle { width: 100%; margin-top: 8px; background: transparent; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); font-family: var(--font); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .longrange-toggle:hover { color: var(--accent); border-color: var(--accent); }
 .longrange { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 .far { opacity: 0.7; }
@@ -260,7 +271,7 @@ body::before {
 .dd-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
 .dd-val { font-size: 13px; font-weight: 500; }
 .dd-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-.dd-tab { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 13px; border-radius: 99px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.dd-tab { background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: var(--font); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 13px; border-radius: 99px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .dd-tab.active { background: var(--accent); color: var(--bg); }
 .dd-pane.hidden { display: none; }
 .dd-chart svg { width: 100%; height: auto; display: block; }
@@ -271,11 +282,11 @@ body::before {
 .hist-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
 .hc-field { flex: 1; min-width: 110px; }
 .hc-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
-.hc-field input, .hc-field select { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 1rem; outline: none; -webkit-appearance: none; appearance: none; transition: border-color 0.2s; }
+.hc-field input, .hc-field select { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px; color: var(--text); font-family: var(--font); font-size: 1rem; outline: none; -webkit-appearance: none; appearance: none; transition: border-color 0.2s; }
 .hc-field input:focus, .hc-field select:focus { border-color: var(--accent); }
 .hc-field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px; }
 .hc-field select option { background: #1c1c1c; color: #f0ede8; }
-.btn-compare { background: var(--accent2); border: none; border-radius: 10px; color: #0e0e0e; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 18px; cursor: pointer; align-self: flex-end; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+.btn-compare { background: var(--accent2); border: none; border-radius: 10px; color: #0e0e0e; font-family: var(--font); font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 18px; cursor: pointer; align-self: flex-end; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
 .btn-compare:active { opacity: 0.85; }
 
 /* TABLE */
@@ -323,7 +334,7 @@ td.rain-c { color: var(--accent3); }
 .tappable:hover { border-color: var(--accent); }
 .tappable:active { transform: scale(0.995); }
 .tap-hint { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; margin-left: 6px; text-transform: none; }
-.mini-btn { float: right; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
+.mini-btn { float: right; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: var(--font); font-size: 10px; letter-spacing: 0.04em; padding: 4px 9px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
 .mini-btn:active { opacity: 0.8; }
 
 /* ── MODAL ── */
@@ -344,21 +355,21 @@ td.rain-c { color: var(--accent3); }
 
 /* ── TABS ── */
 .tabbar { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; margin-bottom: 16px; width: fit-content; }
-.tabbar button { background: transparent; border: none; cursor: pointer; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.05em; padding: 9px 18px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+.tabbar button { background: transparent; border: none; cursor: pointer; color: var(--muted); font-family: var(--font); font-size: 12px; letter-spacing: 0.05em; padding: 9px 18px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
 .tabbar button:hover { color: var(--text); }
 .tabbar button.active { background: var(--accent); color: var(--bg); font-weight: 500; }
 
 /* ── CITIES MAP ── */
 .map-status { font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px; line-height: 1.6; }
-.leaflet-container { font-family: 'DM Mono', monospace; background: #0a0a0a; }
+.leaflet-container { font-family: var(--font); background: #0a0a0a; }
 .leaflet-control-attribution { font-size: 9px !important; }
 #euMapEl { width: 100%; height: 66vh; min-height: 380px; background: #0a0a0a; }
-.map-overlay { position: absolute; top: 12px; left: 12px; z-index: 1000; background: rgba(0,0,0,0.6); color: #fff; font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 11px; border-radius: 99px; pointer-events: none; }
+.map-overlay { position: absolute; top: 12px; left: 12px; z-index: 1000; background: rgba(0,0,0,0.6); color: #fff; font-family: var(--font); font-size: 11px; padding: 6px 11px; border-radius: 99px; pointer-events: none; }
 .map-overlay.hidden { display: none; }
 .emoji-pin { background: none !important; border: none !important; }
 .emoji-pin .pin { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 46px; }
 .pin-emoji { font-size: 15px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.75)); transition: font-size 0.15s ease; }
-.pin-temp { font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; color: #fff; text-shadow: 0 1px 2px #000; margin-top: -1px; }
+.pin-temp { font-family: var(--font); font-size: 9px; font-weight: 500; color: #fff; text-shadow: 0 1px 2px #000; margin-top: -1px; }
 .pin-name { display: none; font-size: 9px; color: #fff; text-shadow: 0 1px 3px #000; margin-top: 1px; white-space: nowrap; }
 #euMapEl.zoomed .pin-emoji { font-size: 27px; }
 #euMapEl.zoomed .pin-temp { font-size: 11px; }
