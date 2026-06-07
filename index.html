@@ -21,7 +21,7 @@
    Palettes selected via [data-theme] on <html>:
    · current    – the original dark / lime editorial look (default)
    · minimal    – super-minimalist light monochrome
-   · futuristic – neon cyan + magenta glassmorphism
+   · sunset     – warm golden-hour sky, frosted glass, coral accents
    · ai         – "Neural" teal/blue AI-entity look + live synapse canvas  */
 
 :root[data-theme="current"] {
@@ -38,12 +38,12 @@
   --accent-rgb:20,20,20; --accent3-rgb:122,122,122;
   --radius:10px; --display:'DM Serif Display'; --card-blur:0px;
 }
-:root[data-theme="futuristic"] {
-  --bg:#05070f; --surface:#0a1120; --card:rgba(18,28,52,0.55); --border:rgba(120,200,255,0.18);
-  --accent:#22d3ee; --accent2:#d946ef; --accent3:#38bdf8;
-  --text:#e7f1ff; --muted:#8197bd; --bull:#22d3ee; --bear:#ff6b8b;
-  --accent-rgb:34,211,238; --accent3-rgb:56,189,248;
-  --radius:16px; --display:'DM Serif Display'; --card-blur:14px;
+:root[data-theme="sunset"] {
+  --bg:#fde7cf; --surface:rgba(255,255,255,0.5); --card:rgba(255,255,255,0.55); --border:rgba(255,138,92,0.3);
+  --accent:#ff5d3b; --accent2:#ff9f1c; --accent3:#2f8fff;
+  --text:#4a2a1c; --muted:#a37a64; --bull:#ff5d3b; --bear:#d4341f;
+  --accent-rgb:255,93,59; --accent3-rgb:47,143,255;
+  --radius:22px; --display:'DM Serif Display'; --card-blur:18px;
 }
 :root[data-theme="ai"] {
   --bg:#020809; --surface:#06141a; --card:rgba(8,26,30,0.5); --border:rgba(45,230,200,0.22);
@@ -91,6 +91,17 @@ body::before {
 :root[data-theme="minimal"] body::before { display: none; }
 :root[data-theme="minimal"] .brand-mark { animation: none; filter: none; }
 :root[data-theme="minimal"] .card { box-shadow: none; }
+
+/* Sunset theme: warm animated golden-hour sky with a glowing sun */
+:root[data-theme="sunset"] body { background: linear-gradient(180deg,#ffd5a8 0%,#ffb98c 35%,#ff9a76 65%,#ff7e7e 100%); background-attachment: fixed; }
+:root[data-theme="sunset"] body::before {
+  background:
+    radial-gradient(circle 220px at 78% 24%, rgba(255,247,214,0.95) 0%, rgba(255,190,120,0.45) 40%, transparent 70%),
+    radial-gradient(ellipse 70% 50% at 20% 90%, rgba(255,120,120,0.35) 0%, transparent 60%);
+  animation: sunGlow 8s ease-in-out infinite alternate;
+}
+@keyframes sunGlow { from{transform:translateY(0);opacity:0.9;} to{transform:translateY(-10px);opacity:1;} }
+:root[data-theme="sunset"] .brand-mark { filter: drop-shadow(0 0 12px #ff9f1c); }
 * { position: relative; z-index: 1; }
 
 /* node-network canvas — only visible in AI theme */
@@ -139,7 +150,7 @@ body::before {
   transition: background 0.4s ease, border-color 0.4s ease;
 }
 :root[data-theme="ai"] .card { box-shadow: 0 0 0 1px rgba(var(--accent-rgb),0.08), 0 18px 50px -22px rgba(var(--accent-rgb),0.55); }
-:root[data-theme="futuristic"] .card { box-shadow: 0 12px 40px -20px rgba(0,0,0,0.8); }
+:root[data-theme="sunset"] .card { box-shadow: 0 18px 44px -22px rgba(255,93,59,0.5); }
 .card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; }
 .card-title.accent  { color: var(--accent); }
 .card-title.accent2 { color: var(--accent2); }
@@ -333,6 +344,17 @@ td.rain-c { color: var(--accent3); }
 .map-status { font-size: 11px; color: var(--muted); text-align: center; margin-top: 12px; line-height: 1.6; }
 .leaflet-container { font-family: 'DM Mono', monospace; background: #0a0a0a; }
 .leaflet-control-attribution { font-size: 9px !important; }
+#euMapEl { width: 100%; height: 66vh; min-height: 380px; background: #0a0a0a; }
+.map-overlay { position: absolute; top: 12px; left: 12px; z-index: 1000; background: rgba(0,0,0,0.6); color: #fff; font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 11px; border-radius: 99px; pointer-events: none; }
+.map-overlay.hidden { display: none; }
+.emoji-pin { background: none !important; border: none !important; text-align: center; }
+.pin-emoji { font-size: 20px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
+.pin-temp { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; color: #fff; text-shadow: 0 1px 2px #000; margin-top: -2px; }
+
+/* ── WHAT TO WEAR ── */
+.wear-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wear-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 7px; }
+.wear-chip .wc-emoji { font-size: 16px; }
 
 /* ── MONTH OVERVIEW (calendar) ── */
 .mo-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 8px; margin-bottom: 16px; }
@@ -384,7 +406,7 @@ td.rain-c { color: var(--accent3); }
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
       <button data-theme="current">Current</button>
       <button data-theme="minimal">Minimal</button>
-      <button data-theme="futuristic">Futuristic</button>
+      <button data-theme="sunset">Sunset</button>
       <button data-theme="ai">Neural</button>
     </div>
     <span class="mode-tag" id="modeTag">Classic</span>
@@ -411,6 +433,7 @@ td.rain-c { color: var(--accent3); }
   <div class="tabbar" id="tabbar" role="tablist">
     <button data-tab="forecast" class="active">☂ Forecast</button>
     <button data-tab="map">🛰 Rain Map</button>
+    <button data-tab="europe">🗺 Cities</button>
   </div>
 
   <div id="forecastView">
@@ -448,6 +471,12 @@ td.rain-c { color: var(--accent3); }
       <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
       <div class="stat-row hidden" id="rowRain"><span class="label">Rain Chance (now)</span><span class="value accent3" id="sRain"></span></div>
       <div class="stat-row"><span class="label">UV Index</span><span class="value accent2" id="sUV"></span></div>
+    </div>
+
+    <!-- WHAT TO WEAR -->
+    <div class="card" id="wearCard" style="animation-delay:0.07s">
+      <div class="card-title accent2">What to wear today</div>
+      <div id="wearBody" class="wear-chips"></div>
     </div>
 
     <!-- HOURLY -->
@@ -521,15 +550,25 @@ td.rain-c { color: var(--accent3); }
 
   <!-- RAIN MAP -->
   <div id="mapView" class="hidden">
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card" style="padding:0;overflow:hidden;position:relative">
       <div id="mapEl"></div>
+      <div id="mapOverlay" class="map-overlay">Loading radar…</div>
       <div class="map-controls">
         <button type="button" id="radarPlay" class="mini-btn" onclick="toggleRadar()">⏸ Pause</button>
         <span id="mapTime" class="map-time">—</span>
         <span class="map-legend"><i style="background:#3ad6ff"></i>light <i style="background:#2ecc71"></i>rain <i style="background:#f1c40f"></i>heavy <i style="background:#e74c3c"></i>storm</span>
       </div>
     </div>
-    <p id="mapStatus" class="map-status">Animated precipitation radar — past hours into the next ~30 min. Pixelated by design.</p>
+    <p id="mapStatus" class="map-status">Animated precipitation radar — past hours into the next ~30 min. Pixelated by design. Tip: rain shows as coloured blobs; clear skies show nothing.</p>
+  </div>
+
+  <!-- EUROPE LIVE WEATHER -->
+  <div id="euView" class="hidden">
+    <div class="card" style="padding:0;overflow:hidden;position:relative">
+      <div id="euMapEl"></div>
+      <div id="euOverlay" class="map-overlay">Loading cities…</div>
+    </div>
+    <p class="map-status">Live conditions across European cities — each pin is the current weather there. Tap a pin for the temperature.</p>
   </div>
 
   <div class="disclaimer">SkyCast · Open-Meteo · Radar: RainViewer · Map: OpenStreetMap/CARTO</div>
@@ -795,7 +834,7 @@ function computeBestDay(days){
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
-const MODE_LABELS = { current:'Classic', minimal:'Minimal', futuristic:'Futuristic', ai:'⚡ Neural Entity Online' };
+const MODE_LABELS = { current:'Classic', minimal:'Minimal', sunset:'☀ Golden Hour', ai:'⚡ Neural Entity Online' };
 function setTheme(name){
   if(!MODE_LABELS[name]) name='current';
   document.documentElement.setAttribute('data-theme', name);
@@ -883,19 +922,23 @@ function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF
 document.querySelectorAll('#tabbar button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 function switchTab(t){
   document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
-  const isMap=(t==='map');
-  document.getElementById('forecastView').classList.toggle('hidden', isMap);
-  document.getElementById('mapView').classList.toggle('hidden', !isMap);
-  if (isMap) openRainMap();
+  document.getElementById('forecastView').classList.toggle('hidden', t!=='forecast');
+  document.getElementById('mapView').classList.toggle('hidden', t!=='map');
+  document.getElementById('euView').classList.toggle('hidden', t!=='europe');
+  if (t==='map') openRainMap();
+  if (t==='europe') openEuropeMap();
 }
+function setOverlay(id, text, show){ const e=document.getElementById(id); if(!e) return; e.textContent=text; e.classList.toggle('hidden', show===false); }
+const CARTO='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
 // ── RAIN MAP — Leaflet basemap + animated RainViewer radar ───────
 let lmap=null, radarLayers=[], radarFrames=[], radarIdx=0, radarTimer=null, radarMarker=null;
 function openRainMap(){
-  if (!window.L){ document.getElementById('mapStatus').textContent='Map library failed to load — check your connection.'; return; }
+  if (!window.L){ setOverlay('mapOverlay','Map library failed to load'); return; }
   if (!lmap){
-    lmap=L.map('mapEl',{zoomControl:true, attributionControl:true}).setView([currentLat??50.85, currentLon??4.35], 7);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:12, attribution:'© OpenStreetMap, © CARTO'}).addTo(lmap);
+    lmap=L.map('mapEl',{zoomControl:true}).setView([currentLat??50.85, currentLon??4.35], 6);
+    L.tileLayer(CARTO, {maxZoom:12, attribution:'© OpenStreetMap, © CARTO'}).addTo(lmap);
+    lmap.createPane('radar'); lmap.getPane('radar').style.zIndex=350; lmap.getPane('radar').style.pointerEvents='none';
     loadRadar();
   }
   recenterMap();
@@ -903,30 +946,33 @@ function openRainMap(){
 }
 function recenterMap(){
   if (!lmap || currentLat==null) return;
-  lmap.setView([currentLat, currentLon], lmap.getZoom()||7);
+  lmap.setView([currentLat, currentLon], lmap.getZoom()||6);
   if (radarMarker) radarMarker.remove();
   radarMarker=L.circleMarker([currentLat, currentLon], {radius:6, color:'#fff', weight:2, fillColor:'#16efc6', fillOpacity:0.9}).addTo(lmap);
 }
 async function loadRadar(){
+  setOverlay('mapOverlay','Loading radar…');
   try{
     const c=new AbortController(); setTimeout(()=>c.abort(), 9000);
     const d=await (await fetch('https://api.rainviewer.com/public/weather-maps.json', {signal:c.signal})).json();
     const host=d.host, past=d.radar?.past||[], now=d.radar?.nowcast||[];
     const frames=[...past, ...now];
-    if (!frames.length){ document.getElementById('mapStatus').textContent='No radar frames available right now.'; return; }
+    if (!frames.length){ setOverlay('mapOverlay','No radar frames available'); return; }
     radarLayers.forEach(l=>l.remove()); radarLayers=[]; radarFrames=[];
     frames.forEach(f=>{
       radarFrames.push({time:f.time, future:now.includes(f)});
-      const layer=L.tileLayer(`${host}${f.path}/256/{z}/{x}/{y}/4/0_1.png`, {opacity:0, tileSize:256, zIndex:5});
+      // color scheme 2 (universal), smooth 0 = pixelated, snow 1; on its own pane
+      const layer=L.tileLayer(`${host}${f.path}/256/{z}/{x}/{y}/2/0_1.png`, {opacity:0, tileSize:256, pane:'radar'});
       layer.addTo(lmap); radarLayers.push(layer);
     });
     radarIdx=Math.max(0, past.length-1);   // start at "now"
     showFrame(radarIdx);
     startRadar();
-  }catch(e){ document.getElementById('mapStatus').textContent='Could not load rain radar right now.'; }
+    setOverlay('mapOverlay','● Live radar');
+  }catch(e){ setOverlay('mapOverlay','Radar unavailable right now'); }
 }
 function showFrame(i){
-  radarLayers.forEach((l,j)=>l.setOpacity(j===i?0.7:0));
+  radarLayers.forEach((l,j)=>l.setOpacity(j===i?0.8:0));
   const f=radarFrames[i]; if(!f) return;
   const hhmm=new Date(f.time*1000).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
   document.getElementById('mapTime').textContent=(f.future?'forecast ':'')+hhmm;
@@ -935,6 +981,68 @@ function startRadar(){ stopRadarTimer(); if(!radarLayers.length) return; radarTi
 function stopRadarTimer(){ if(radarTimer){ clearInterval(radarTimer); radarTimer=null; } }
 function toggleRadar(){ radarTimer ? (stopRadarTimer(), setPlayLabel(false)) : startRadar(); }
 function setPlayLabel(p){ const b=document.getElementById('radarPlay'); if(b) b.textContent=p?'⏸ Pause':'▶ Play'; }
+
+// ── EUROPE LIVE WEATHER — one emoji pin per city ─────────────────
+const EU_CITIES=[
+  ['London',51.51,-0.13],['Paris',48.85,2.35],['Berlin',52.52,13.40],['Madrid',40.42,-3.70],
+  ['Rome',41.90,12.50],['Brussels',50.85,4.35],['Amsterdam',52.37,4.90],['Vienna',48.21,16.37],
+  ['Lisbon',38.72,-9.14],['Dublin',53.35,-6.26],['Copenhagen',55.68,12.57],['Stockholm',59.33,18.06],
+  ['Oslo',59.91,10.75],['Helsinki',60.17,24.94],['Warsaw',52.23,21.01],['Prague',50.08,14.44],
+  ['Budapest',47.50,19.04],['Athens',37.98,23.73],['Zurich',47.37,8.54],['Barcelona',41.39,2.17],
+  ['Munich',48.14,11.58],['Milan',45.46,9.19],['Kyiv',50.45,30.52],['Bucharest',44.43,26.10],
+  ['Belgrade',44.79,20.45],['Istanbul',41.01,28.98],['Reykjavik',64.15,-21.94],['Edinburgh',55.95,-3.19]
+];
+let euMap=null, euLayer=null;
+function openEuropeMap(){
+  if (!window.L){ setOverlay('euOverlay','Map library failed to load'); return; }
+  if (!euMap){
+    euMap=L.map('euMapEl',{zoomControl:true}).setView([54,15], 4);
+    L.tileLayer(CARTO, {maxZoom:10, attribution:'© OpenStreetMap, © CARTO'}).addTo(euMap);
+    loadEurope();
+  }
+  setTimeout(()=>euMap && euMap.invalidateSize(), 130);
+}
+async function loadEurope(){
+  setOverlay('euOverlay','Loading cities…');
+  try{
+    const lats=EU_CITIES.map(c=>c[1]).join(','), lons=EU_CITIES.map(c=>c[2]).join(',');
+    const c=new AbortController(); setTimeout(()=>c.abort(), 10000);
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+    const data=await (await fetch(url, {signal:c.signal})).json();
+    const arr=Array.isArray(data)?data:[data];
+    if (euLayer) euLayer.remove();
+    euLayer=L.layerGroup().addTo(euMap);
+    let placed=0;
+    arr.forEach((r,i)=>{
+      const city=EU_CITIES[i]; if(!city||!r.current) return;
+      const info=wc(r.current.weather_code, r.current.is_day), tmp=Math.round(r.current.temperature_2m);
+      const html=`<div class="pin-emoji">${info.i}</div><div class="pin-temp">${tmp}°</div>`;
+      L.marker([city[1],city[2]], {icon:L.divIcon({className:'emoji-pin', html, iconSize:[42,42]})})
+        .bindPopup(`<b>${city[0]}</b><br>${info.i} ${info.d} · ${tmp}°C`).addTo(euLayer);
+      placed++;
+    });
+    setOverlay('euOverlay', placed?'● Live · '+placed+' cities':'No city data', placed>0);
+    if(!placed) setOverlay('euOverlay','No city data');
+  }catch(e){ setOverlay('euOverlay','Could not load city weather'); }
+}
+
+// ── WHAT TO WEAR TODAY ───────────────────────────────────────────
+function renderWear(d){
+  const cur=d.current, dy=d.daily;
+  const feels=cur.apparent_temperature ?? cur.temperature_2m;
+  const chips=[];
+  if (feels<0) chips.push(['🧥','Heavy coat, hat & gloves']);
+  else if (feels<8) chips.push(['🧥','Warm coat']);
+  else if (feels<14) chips.push(['🧶','Light jacket']);
+  else if (feels<20) chips.push(['👕','Long sleeves']);
+  else if (feels<27) chips.push(['👕','T-shirt weather']);
+  else chips.push(['🥵','Stay cool & hydrate']);
+  if (isWet(dy.weather_code[0]) || (dy.precipitation_probability_max[0]??0)>=50) chips.push(['☂️','Take an umbrella']);
+  if ((dy.uv_index_max[0]??0)>=6) chips.push(['🕶️','Sunscreen & sunglasses']);
+  if ((dy.wind_speed_10m_max[0]??0)>=30) chips.push(['💨','Windproof layer']);
+  if ((dy.temperature_2m_max[0]-dy.temperature_2m_min[0])>=12) chips.push(['🌗','Dress in layers (big swing)']);
+  document.getElementById('wearBody').innerHTML=chips.map(([e,t])=>`<span class="wear-chip"><span class="wc-emoji">${e}</span>${t}</span>`).join('');
+}
 
 // ── AUTOCOMPLETE ─────────────────────────────────────────────────
 // First edit after a city was selected: wipe the old name regardless of caret
@@ -1150,8 +1258,9 @@ function renderWeather(d) {
     rowRain.classList.add('hidden');
   }
 
-  // Stargazing tonight (clouds + moon)
+  // Stargazing tonight (clouds + moon) + what-to-wear advice
   renderStargazing(d, start);
+  renderWear(d);
 
   // HOURLY — next 24h starting from the location's current hour (not the browser's)
   const scroll=document.getElementById('hourlyScroll'); scroll.innerHTML='';
