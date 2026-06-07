@@ -1541,6 +1541,7 @@ function renderWeather(d) {
       const open=!detail.classList.contains('hidden');
       row.classList.toggle('active',open);
       if (open && !chartWrap.dataset.built){ chartWrap.appendChild(dayChart(d.hourly, dateStr)); chartWrap.dataset.built='1'; }
+      if (open) setTimeout(()=>row.scrollIntoView({behavior:'smooth', block:'center'}), 90);
     });
     const wrap=document.createElement('div'); if (i>=7) wrap.className='far'; wrap.appendChild(row); wrap.appendChild(detail);
     (i>=7 && farBox ? farBox : wkGrid).appendChild(wrap);
