@@ -1530,13 +1530,16 @@ function renderWeather(d) {
     const h = new Date(times[i]).getHours();
     const prob = d.hourly.precipitation_probability[i];
     const code = d.hourly.weather_code[i];
+    // Show the rain % when it's actually precipitating OR the chance is real
+    // (>=30%), so the strip tracks the Rain chart without flagging tiny chances.
+    const showRain = isWet(code) || (prob!=null && prob>=30);
     const night = d.hourly.is_day[i]===0;   // after sunset / before sunrise
     const el=document.createElement('div'); el.className='hour-card'+(isNow?' now':'');
     el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}${night?' <span class="h-moon">🌙</span>':''}</div>
       <div class="h-icon">${wc(code, d.hourly.is_day[i]).i}</div>
       <div class="h-temp">${T(d.hourly.temperature_2m[i])}</div>
       <div class="h-feels">${d.hourly.apparent_temperature?'≈'+Math.round(d.hourly.apparent_temperature[i])+'°':''}</div>
-      <div class="h-rain">${isWet(code)?'🌧️'+prob+'%':''}</div>`;
+      <div class="h-rain">${showRain?'🌧️'+(prob??0)+'%':''}</div>`;
     scroll.appendChild(el);
     // insert a sunrise/sunset card if one falls within this hour
     const nxt=times[i+1];
