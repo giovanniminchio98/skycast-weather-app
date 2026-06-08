@@ -244,17 +244,17 @@ body::before {
 .hourly-scroll::-webkit-scrollbar { height: 4px; }
 .hourly-scroll::-webkit-scrollbar-track { background: var(--surface); }
 .hourly-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.hour-card { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: center; min-width: 60px; transition: border-color 0.2s; }
+.hour-card { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: center; min-width: 60px; transition: border-color 0.2s; }
 .hour-card.now { border-color: var(--accent); box-shadow: 0 0 14px -4px var(--accent); }
-.hour-card.sun { border-color: var(--accent2); background: rgba(255,255,255,0.02); justify-content: center; }
+.hour-card.sun { border-color: var(--accent2); background: rgba(255,255,255,0.02); }
 .hour-card.sun .h-time { color: var(--accent2); }
-.hour-card.sun .h-icon { font-size: 1.6rem; margin: 7px 0; }
-.h-time { font-size: 10px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; }
+.hour-card.sun .h-icon { font-size: 1.55rem; }
+.h-time { font-size: 10px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; min-height: 13px; }
 .h-moon { font-size: 9px; }
 .hour-card.now .h-time { color: var(--accent); }
-.h-icon { font-size: 1.4rem; margin-bottom: 5px; }
+.h-icon { font-size: 1.4rem; height: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
 .h-temp { font-size: 12px; font-weight: 500; }
-.h-feels { font-size: 9px; color: var(--muted); margin-top: 1px; }
+.h-feels { font-size: 9px; color: var(--muted); margin-top: 1px; min-height: 11px; }
 .h-rain { font-size: 10px; color: var(--accent3); margin-top: 3px; min-height: 13px; }
 
 /* 7-DAY */
