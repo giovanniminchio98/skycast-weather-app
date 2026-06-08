@@ -224,6 +224,9 @@ body::before {
 .today-icon { font-size: clamp(3rem,10vw,4.5rem); line-height: 1; }
 .today-temp { font-family: var(--display); font-style: italic; font-size: clamp(2.8rem,10vw,4.2rem); line-height: 1; color: var(--accent); }
 :root[data-theme="ai"] .today-temp { font-style: normal; }
+.today-feelslabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 2px; }
+.today-actual { font-size: 13px; color: var(--muted); margin-top: 5px; }
+.today-actual b { color: var(--text); font-weight: 600; }
 .today-desc { font-size: 12px; color: var(--muted); margin-top: 4px; text-transform: capitalize; }
 .today-range { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .today-range b { color: var(--text); font-weight: 500; }
@@ -512,13 +515,14 @@ td.rain-c { color: var(--accent3); }
       <div class="today-main">
         <div class="today-icon" id="todayIcon"></div>
         <div>
+          <div class="today-feelslabel">Feels like</div>
           <div class="today-temp" id="todayTemp"></div>
+          <div class="today-actual">Actual <b id="todayActual"></b></div>
           <div class="today-desc" id="todayDesc"></div>
           <div class="today-range">High <b id="todayHi"></b> · Low <b id="todayLo"></b></div>
           <div class="today-local" id="todayLocal"></div>
         </div>
       </div>
-      <div class="stat-row"><span class="label">Feels like</span><span class="value accent" id="sFeels"></span></div>
       <div class="stat-row"><span class="label">Humidity</span><span class="value accent3" id="sHum"></span></div>
       <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
       <div class="stat-row hidden" id="rowRain"><span class="label">Rain Chance (now)</span><span class="value accent3" id="sRain"></span></div>
@@ -710,21 +714,29 @@ const burnMinutes = uv => uv<1 ? null : Math.round(200/uv);   // ~fair skin, app
 // Smarter day icon: the API's daily code is the day's *worst* weather, so sunny
 // days with one shower looked gloomy. Look at the daylight hours and prefer sun
 // when the day is genuinely sunny (and not actually rainy).
-function dayIcon(hourly, dateStr, dailyCode){
-  if (!hourly || !hourly.time) return wc(dailyCode);
-  let clear=0, wet=0, total=0;
-  for (let i=0;i<hourly.time.length;i++){
-    if (!hourly.time[i].startsWith(dateStr)) continue;
-    if (hourly.is_day[i]!==1) continue;            // daylight only
-    total++;
-    const code=hourly.weather_code[i];
-    if (isWet(code)) wet++;
-    else if (code===0||code===1) clear++;
+function dayIcon(hourly, dateStr, dailyCode, dayProb){
+  let clear=0, rainy=0, total=0;
+  if (hourly && hourly.time){
+    for (let i=0;i<hourly.time.length;i++){
+      if (!hourly.time[i].startsWith(dateStr)) continue;
+      if (hourly.is_day[i]!==1) continue;          // daylight only
+      total++;
+      const code=hourly.weather_code[i];
+      const p=hourly.precipitation_probability ? hourly.precipitation_probability[i] : null;
+      if (p!=null && p>=40) rainy++;               // genuine rain chance this hour
+      else if (code===0||code===1) clear++;
+    }
   }
-  if (total===0) return wc(dailyCode);
-  if (wet<3 && clear>=5) return {i:'☀️', d:'Sunny'};
-  if (wet<3 && clear>=2) return {i:'🌤️', d:'Sun & clouds'};
-  return wc(dailyCode);                              // rainy / cloudy / fog → keep API icon
+  const wet = isWet(dailyCode);
+  // Put rain in the icon only when it's genuinely likely: several wet daylight
+  // hours (>=40% each) or a high daily max chance (>=50%). A low-chance day
+  // (e.g. a 14% Saturday) keeps its sun/cloud icon instead.
+  if (rainy>=3 || (wet && dayProb!=null && dayProb>=50))
+    return wet ? wc(dailyCode) : {i:'🌧️', d:'Showers likely'};
+  if (clear>=5) return {i:'☀️', d:'Sunny'};
+  if (clear>=2) return {i:'🌤️', d:'Sun & clouds'};
+  if (total===0) return wet ? {i:'☁️', d:'Cloudy'} : wc(dailyCode);
+  return {i:'☁️', d:'Cloudy'};
 }
 
 // ── MODAL / POPUP ────────────────────────────────────────────────
@@ -944,7 +956,7 @@ function openDayModal(i){
   const date=new Date(dateStr+'T12:00:00');
   const name=i===0?'Today':date.toLocaleDateString('en-US',{weekday:'long'});
   const dlbl=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  const ic=dayIcon(WX.hourly, dateStr, days.weather_code[i]);
+  const ic=dayIcon(WX.hourly, dateStr, days.weather_code[i], days.precipitation_probability_max[i]);
   const hi=days.temperature_2m_max[i], lo=days.temperature_2m_min[i];
   const rainP=days.precipitation_probability_max[i], wet=isWet(days.weather_code[i]);
   const grid=`<div class="dd-subtitle">Details</div><div class="dd-grid">
@@ -1481,13 +1493,14 @@ function renderWeather(d) {
   // Hero icon: use the same whole-day summary as today's 16-day forecast row
   // (dayIcon looks at all daylight hours) so the hero and the forecast agree —
   // e.g. a day with rain shows rain here too, not just the current cloud.
-  const heroIc = dayIcon(d.hourly, d.daily.time[0], d.daily.weather_code[0]);
+  const heroIc = dayIcon(d.hourly, d.daily.time[0], d.daily.weather_code[0], d.daily.precipitation_probability_max[0]);
   document.getElementById('todayIcon').textContent = heroIc.i;
-  document.getElementById('todayTemp').textContent = T(cur.temperature_2m);
+  // Headline = feels-like (what it's like outside); actual temp shown below it.
+  document.getElementById('todayTemp').textContent   = F(cur.apparent_temperature);
+  document.getElementById('todayActual').textContent = T(cur.temperature_2m);
   document.getElementById('todayDesc').textContent = heroIc.d;
   document.getElementById('todayHi').textContent   = T(day0.hi);
   document.getElementById('todayLo').textContent   = T(day0.lo);
-  document.getElementById('sFeels').textContent = F(cur.apparent_temperature);
   document.getElementById('sHum').textContent  = cur.relative_humidity_2m + '%';
   document.getElementById('sWind').textContent = W(cur.wind_speed_10m) + (windDir(cur.wind_direction_10m) ? ' ' + windDir(cur.wind_direction_10m) : '');
   document.getElementById('sUV').textContent   = day0.uv ?? '—';
@@ -1530,9 +1543,9 @@ function renderWeather(d) {
     const h = new Date(times[i]).getHours();
     const prob = d.hourly.precipitation_probability[i];
     const code = d.hourly.weather_code[i];
-    // Show the rain % when it's actually precipitating OR the chance is real
-    // (>=30%), so the strip tracks the Rain chart without flagging tiny chances.
-    const showRain = isWet(code) || (prob!=null && prob>=30);
+    // Show the rain % when it's actually precipitating OR the chance is high
+    // (>50%) — these forecasts skew high, so a >50% cutoff keeps it meaningful.
+    const showRain = isWet(code) || (prob!=null && prob>50);
     const night = d.hourly.is_day[i]===0;   // after sunset / before sunrise
     const el=document.createElement('div'); el.className='hour-card'+(isNow?' now':'');
     el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}${night?' <span class="h-moon">🌙</span>':''}</div>
@@ -1586,7 +1599,7 @@ function renderWeather(d) {
     const barL=((lo-gMin)/range*100).toFixed(1), barW=((hi-lo)/range*100).toFixed(1);
     const rainP=days.precipitation_probability_max[i];
     const wet=isWet(days.weather_code[i]);
-    const ic=dayIcon(d.hourly, dateStr, days.weather_code[i]);   // smarter sun-aware icon
+    const ic=dayIcon(d.hourly, dateStr, days.weather_code[i], rainP);   // smarter sun/rain-aware icon
     const row=document.createElement('div'); row.className='week-row'+(i===bestIdx?' best':'')+(i>=7?' far':'');
     row.innerHTML=`<div class="wr-day">${i===bestIdx?'⭐ ':''}${name}<small>${dlbl}</small></div>
       <div class="wr-icon">${ic.i}</div>
