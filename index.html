@@ -131,6 +131,7 @@ body::before {
 
 /* ── HEADER ── */
 .header { padding: 40px 20px 24px; max-width: 1200px; margin: 0 auto; }
+.title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 12px; }
 .header h1 { font-family: var(--display); font-style: italic; font-size: clamp(32px,7vw,52px); line-height: 1.05; }
 :root[data-theme="ai"] .header h1 { font-style: normal; letter-spacing: 0.02em; }
@@ -160,7 +161,7 @@ body::before {
 }
 :root[data-theme="ai"] .mode-tag { color: var(--accent); border-color: rgba(var(--accent-rgb),0.4); box-shadow: 0 0 14px -4px var(--accent); }
 .globe-btn {
-  margin-left: auto; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
   background: var(--surface); border: 1px solid var(--border); color: var(--text);
   font-family: var(--font); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 8px 14px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
@@ -247,7 +248,12 @@ body::before {
 .today-range { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .today-range b { color: var(--text); font-weight: 500; }
 .today-local { font-size: 11px; color: var(--accent3); margin-top: 5px; letter-spacing: 0.04em; }
-.today-chart { margin-top: 14px; cursor: default; }
+.today-chart { margin-top: 12px; cursor: default; }
+/* Compact 2-column grid for the Today card's daily readouts (keeps the card
+   short; the feels-like headline + chart stay full-size). */
+.today-stats { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
+.today-stats .stat-row { padding: 5px 0; font-size: 11.5px; }
+.today-stats .stat-row:nth-last-child(-n+2) { border-bottom: none; }
 
 /* STAT ROWS */
 .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
@@ -473,7 +479,10 @@ td.rain-c { color: var(--accent3); }
 <canvas id="liveCanvas" aria-hidden="true"></canvas>
 
 <div class="header">
-  <h1>Sky<span>Cast</span></h1>
+  <div class="title-row">
+    <h1>Sky<span>Cast</span></h1>
+    <span class="mode-tag" id="modeTag">Classic</span>
+  </div>
   <div class="theme-bar">
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
       <button data-theme="current">Current</button>
@@ -481,7 +490,6 @@ td.rain-c { color: var(--accent3); }
       <button data-theme="live">Live</button>
       <button data-theme="ai">Neural</button>
     </div>
-    <span class="mode-tag" id="modeTag">Classic</span>
     <button class="globe-btn" id="globeBtn" type="button" title="World cities map" aria-label="World cities map" aria-pressed="false">🌍 <span>World</span></button>
   </div>
 </div>
@@ -535,10 +543,12 @@ td.rain-c { color: var(--accent3); }
           <div class="today-local" id="todayLocal"></div>
         </div>
       </div>
-      <div class="stat-row"><span class="label">Humidity</span><span class="value accent3" id="sHum"></span></div>
-      <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
-      <div class="stat-row hidden" id="rowRain"><span class="label">Rain Chance (now)</span><span class="value accent3" id="sRain"></span></div>
-      <div class="stat-row"><span class="label">UV Index</span><span class="value accent2" id="sUV"></span></div>
+      <div class="today-stats">
+        <div class="stat-row"><span class="label">Humidity</span><span class="value accent3" id="sHum"></span></div>
+        <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
+        <div class="stat-row hidden" id="rowRain"><span class="label">Rain (now)</span><span class="value accent3" id="sRain"></span></div>
+        <div class="stat-row"><span class="label">UV Index</span><span class="value accent2" id="sUV"></span></div>
+      </div>
       <div class="today-chart" id="todayChartHost" onclick="event.stopPropagation()"></div>
     </div>
 
