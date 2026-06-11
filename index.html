@@ -159,6 +159,15 @@ body::before {
   color: var(--accent2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 99px;
 }
 :root[data-theme="ai"] .mode-tag { color: var(--accent); border-color: rgba(var(--accent-rgb),0.4); box-shadow: 0 0 14px -4px var(--accent); }
+.globe-btn {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 8px 14px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+}
+.globe-btn:hover { border-color: var(--accent); color: var(--accent); }
+.globe-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 500; }
+:root[data-theme="cyber"] .globe-btn { border-radius: 4px; }
 
 /* ── WRAPPER ── */
 .wrapper { max-width: 1200px; margin: 0 auto; padding: 0 20px 80px; }
@@ -185,7 +194,7 @@ body::before {
 .search-input-wrap { flex: 1; position: relative; z-index: 1000; }
 .search-input-wrap input {
   width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-  padding: 13px 14px 13px 42px; color: var(--text);
+  padding: 13px 40px 13px 42px; color: var(--text);
   font-family: var(--font); font-size: 1rem; outline: none;
   transition: border-color 0.2s; -webkit-appearance: none;
   backdrop-filter: blur(var(--card-blur)); -webkit-backdrop-filter: blur(var(--card-blur));
@@ -193,6 +202,13 @@ body::before {
 .search-input-wrap input:focus { border-color: var(--accent); }
 .search-input-wrap input::placeholder { color: var(--muted); }
 .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 50%;
+  color: var(--muted); font-size: 12px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.search-clear:hover { color: var(--text); border-color: var(--accent); }
 
 /* AUTOCOMPLETE */
 .ac-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); z-index: 200; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
@@ -444,7 +460,8 @@ td.rain-c { color: var(--accent3); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error-msg { background: rgba(255,107,107,0.07); border: 1px solid rgba(255,107,107,0.25); border-radius: 10px; padding: 12px 14px; color: var(--bear); font-size: 12px; margin-bottom: 16px; line-height: 1.6; }
 .error-msg code { display: block; margin-top: 5px; font-size: 11px; color: var(--muted); word-break: break-all; }
-.disclaimer { margin-top: 40px; text-align: center; font-size: 11px; color: var(--muted); opacity: 0.5; letter-spacing: 0.1em; }
+.footer-info { margin-top: 48px; text-align: center; font-size: 12px; color: var(--muted); letter-spacing: 0.06em; line-height: 1.6; }
+.disclaimer { margin-top: 10px; text-align: center; font-size: 11px; color: var(--muted); opacity: 0.5; letter-spacing: 0.1em; }
 .hidden { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
@@ -456,9 +473,7 @@ td.rain-c { color: var(--accent3); }
 <canvas id="liveCanvas" aria-hidden="true"></canvas>
 
 <div class="header">
-  <div class="eyebrow">● Live Forecast</div>
   <h1>Sky<span>Cast</span></h1>
-  <div class="subtitle">Current conditions · 7-day outlook · Historical data · Open-Meteo model</div>
   <div class="theme-bar">
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
       <button data-theme="current">Current</button>
@@ -467,6 +482,7 @@ td.rain-c { color: var(--accent3); }
       <button data-theme="ai">Neural</button>
     </div>
     <span class="mode-tag" id="modeTag">Classic</span>
+    <button class="globe-btn" id="globeBtn" type="button" title="World cities map" aria-label="World cities map" aria-pressed="false">🌍 <span>World</span></button>
   </div>
 </div>
 
@@ -481,15 +497,10 @@ td.rain-c { color: var(--accent3); }
         </svg>
       </span>
       <input type="text" id="cityInput" placeholder="Search any city…" autocomplete="off" inputmode="search">
+      <button type="button" class="search-clear hidden" id="searchClear" aria-label="Clear search" title="Clear">✕</button>
       <div class="ac-list hidden" id="acList"></div>
     </div>
     <button class="btn-search" id="searchBtn">Search</button>
-  </div>
-
-  <!-- TABS -->
-  <div class="tabbar" id="tabbar" role="tablist">
-    <button data-tab="forecast" class="active">☂ Forecast</button>
-    <button data-tab="europe">🗺 Cities</button>
   </div>
 
   <div id="forecastView">
@@ -606,15 +617,16 @@ td.rain-c { color: var(--accent3); }
 
   </div><!-- /forecastView -->
 
-  <!-- EUROPE LIVE WEATHER -->
+  <!-- WORLD LIVE WEATHER -->
   <div id="euView" class="hidden">
     <div class="card" style="padding:0;overflow:hidden;position:relative">
       <div id="euMapEl"></div>
       <div id="euOverlay" class="map-overlay">Loading cities…</div>
     </div>
-    <p class="map-status">Live conditions across ~100 European cities — zoom in for bigger icons &amp; names. Tap a pin for details.</p>
+    <p class="map-status">Live conditions across major cities worldwide (Europe in detail · capitals elsewhere) — zoom in for bigger icons &amp; names. Tap a pin for details.</p>
   </div>
 
+  <footer class="footer-info">Current conditions · 7-day outlook · Historical data · Open-Meteo model</footer>
   <div class="disclaimer">SkyCast · Open-Meteo · Map: OpenStreetMap/CARTO</div>
 </div>
 
@@ -1205,12 +1217,15 @@ function startLive(){ if(liveRAF) return; if(!lcanvas) initLive(); resizeLive();
 function stopLive(){ if(liveRAF){ cancelAnimationFrame(liveRAF); liveRAF=null; lctx&&lctx.clearRect(0,0,innerWidth,innerHeight); } }
 
 // ── TABS ─────────────────────────────────────────────────────────
-document.querySelectorAll('#tabbar button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-function switchTab(t){
-  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
-  document.getElementById('forecastView').classList.toggle('hidden', t!=='forecast');
-  document.getElementById('euView').classList.toggle('hidden', t!=='europe');
-  if (t==='europe') openEuropeMap();
+// World cities map: toggled by the 🌍 button in the controls bar.
+const globeBtn=document.getElementById('globeBtn');
+globeBtn.addEventListener('click', ()=> showCities(document.getElementById('euView').classList.contains('hidden')));
+function showCities(show){
+  document.getElementById('forecastView').classList.toggle('hidden', show);
+  document.getElementById('euView').classList.toggle('hidden', !show);
+  globeBtn.classList.toggle('active', show);
+  globeBtn.setAttribute('aria-pressed', show?'true':'false');
+  if (show) openEuropeMap();
 }
 function setOverlay(id, text, show){ const e=document.getElementById(id); if(!e) return; e.textContent=text; e.classList.toggle('hidden', show===false); }
 const CARTO='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
@@ -1247,11 +1262,43 @@ const EU_CITIES=[
   ['Kyiv',50.45,30.52],['Lviv',49.84,24.03],['Odesa',46.48,30.72],
   ['Istanbul',41.01,28.98],['Ankara',39.93,32.86],['Izmir',38.42,27.14]
 ];
+// Outside Europe: capitals (plus a few globally iconic cities) so the map is
+// genuinely worldwide without thousands of pins.
+const WORLD_CITIES=[
+  // Asia & Middle East
+  ['Tokyo',35.68,139.69],['Beijing',39.90,116.40],['New Delhi',28.61,77.21],['Bangkok',13.76,100.50],
+  ['Jakarta',-6.21,106.85],['Seoul',37.57,126.98],['Manila',14.60,120.98],['Hanoi',21.03,105.85],
+  ['Kuala Lumpur',3.14,101.69],['Singapore',1.35,103.82],['Islamabad',33.69,73.06],['Dhaka',23.81,90.41],
+  ['Riyadh',24.71,46.68],['Tehran',35.69,51.39],['Baghdad',33.31,44.36],['Kabul',34.53,69.17],
+  ['Tashkent',41.30,69.24],['Astana',51.17,71.43],['Colombo',6.93,79.85],['Kathmandu',27.72,85.32],
+  ['Naypyidaw',19.76,96.08],['Phnom Penh',11.56,104.92],['Vientiane',17.97,102.63],['Ulaanbaatar',47.89,106.91],
+  ['Doha',25.29,51.53],['Abu Dhabi',24.45,54.38],['Kuwait City',29.38,47.99],['Muscat',23.59,58.41],
+  ['Amman',31.95,35.93],['Beirut',33.89,35.50],['Jerusalem',31.78,35.22],['Yerevan',40.18,44.51],
+  ['Tbilisi',41.72,44.79],['Baku',40.41,49.87],
+  // Africa
+  ['Cairo',30.04,31.24],['Rabat',34.02,-6.83],['Algiers',36.75,3.06],['Tunis',36.81,10.18],
+  ['Tripoli',32.89,13.19],['Abuja',9.06,7.50],['Lagos',6.52,3.38],['Accra',5.60,-0.19],
+  ['Nairobi',-1.29,36.82],['Addis Ababa',9.03,38.74],['Khartoum',15.50,32.56],['Dakar',14.72,-17.47],
+  ['Kinshasa',-4.32,15.31],['Luanda',-8.84,13.23],['Pretoria',-25.75,28.19],['Cape Town',-33.92,18.42],
+  ['Harare',-17.83,31.05],['Lusaka',-15.39,28.32],['Kampala',0.35,32.58],['Dar es Salaam',-6.79,39.21],
+  ['Maputo',-25.97,32.57],['Windhoek',-22.56,17.08],['Antananarivo',-18.88,47.51],['Bamako',12.64,-8.00],
+  // Americas
+  ['Washington',38.91,-77.04],['New York',40.71,-74.01],['Los Angeles',34.05,-118.24],['Chicago',41.88,-87.63],
+  ['Ottawa',45.42,-75.70],['Toronto',43.65,-79.38],['Mexico City',19.43,-99.13],['Guatemala City',14.63,-90.51],
+  ['Havana',23.11,-82.37],['Santo Domingo',18.49,-69.93],['San José',9.93,-84.08],['Panama City',8.98,-79.52],
+  ['Bogotá',4.71,-74.07],['Caracas',10.49,-66.88],['Quito',-0.18,-78.47],['Lima',-12.05,-77.04],
+  ['La Paz',-16.50,-68.15],['Santiago',-33.45,-70.67],['Buenos Aires',-34.60,-58.38],['Montevideo',-34.90,-56.16],
+  ['Asunción',-25.28,-57.63],['Brasília',-15.79,-47.88],['Rio de Janeiro',-22.91,-43.17],['São Paulo',-23.55,-46.63],
+  // Oceania
+  ['Canberra',-35.28,149.13],['Sydney',-33.87,151.21],['Melbourne',-37.81,144.96],['Wellington',-41.29,174.78],
+  ['Auckland',-36.85,174.76]
+];
+const ALL_CITIES = EU_CITIES.concat(WORLD_CITIES);
 let euMap=null, euLayer=null, euMoveTimer=null, euReqId=0;
 function openEuropeMap(){
   if (!window.L){ setOverlay('euOverlay','Map library failed to load'); return; }
   if (!euMap){
-    euMap=L.map('euMapEl',{zoomControl:true}).setView([52,12], 4);
+    euMap=L.map('euMapEl',{zoomControl:true, worldCopyJump:true, minZoom:2}).setView([25,10], 2);
     L.tileLayer(CARTO, {maxZoom:11, attribution:'© OpenStreetMap, © CARTO'}).addTo(euMap);
     euMap.on('zoomend', updateEuZoom);
     loadEurope();
@@ -1265,7 +1312,7 @@ function updateEuZoom(){
 // Static list of ~100 main European cities — loaded once (fast).
 async function loadEurope(){
   setOverlay('euOverlay','Loading cities…');
-  const cities=EU_CITIES.map(c=>({name:c[0], lat:c[1], lon:c[2]}));
+  const cities=ALL_CITIES.map(c=>({name:c[0], lat:c[1], lon:c[2]}));
   let wx;
   try { wx=await fetchCityWeather(cities); } catch(e){ setOverlay('euOverlay','Could not load city weather'); return; }
   if (euLayer) euLayer.remove();
@@ -1356,25 +1403,40 @@ function renderWear(d){
 // ── AUTOCOMPLETE ─────────────────────────────────────────────────
 // First edit after a city was selected: wipe the old name regardless of caret
 // position (reliable on iOS) and keep only what was just typed/pasted.
+const searchClear = document.getElementById('searchClear');
+function syncClearBtn(){ searchClear.classList.toggle('hidden', !cityInput.value); }
+// Focusing a box that already holds a searched city selects the whole text, so
+// the user can SEE it's highlighted and that typing will replace it (instead of
+// it silently vanishing on the first keystroke).
+cityInput.addEventListener('focus', () => { if (committedCity && cityInput.value) cityInput.select(); });
+// If they type into a committed city without the text being fully selected
+// (e.g. they moved the cursor), still start a fresh search from that keystroke.
 cityInput.addEventListener('beforeinput', e => {
   if (!committedCity) return;
-  committedCity = false; committedLabel = '';
-  if (e.inputType && e.inputType.indexOf('insert') === 0 && e.data != null) {
+  const allSelected = cityInput.selectionStart===0 && cityInput.selectionEnd===cityInput.value.length;
+  if (allSelected) return;                       // native replace already handles it
+  if (e.inputType && e.inputType.indexOf('insert')===0 && e.data!=null){
     e.preventDefault();
     cityInput.value = e.data;
     cityInput.dispatchEvent(new Event('input'));
-  } else {
-    cityInput.value = '';   // backspace etc. on a committed city → start empty
   }
 });
+// Typing over the committed (often selected) city starts a fresh search.
 cityInput.addEventListener('input', () => {
+  committedCity = false; committedLabel = '';
   clearTimeout(acTimer);
   acFocused = -1;
+  syncClearBtn();
   const q = cityInput.value.trim();
   if (q.length < 2) { hideAc(); return; }
   acList.innerHTML = '<div class="ac-loading">Searching…</div>';
   acList.classList.remove('hidden');
   acTimer = setTimeout(() => doAcSearch(q), 380);
+});
+// One-tap clear → empty box, focused and ready for a new city.
+searchClear.addEventListener('click', () => {
+  cityInput.value = ''; committedCity = false; committedLabel = '';
+  hideAc(); syncClearBtn(); cityInput.focus();
 });
 cityInput.addEventListener('keydown', e => {
   const items = acList.querySelectorAll('.ac-item');
@@ -1425,6 +1487,7 @@ function pickResult(r) {
   const label = r.name + (region ? ', ' + region : '');
   cityInput.value = label;
   committedCity = true; committedLabel = label;   // next typed letter starts a fresh search
+  syncClearBtn();
   hideAc();
   loadWeather(r.lat, r.lon, label);
 }
@@ -1485,6 +1548,7 @@ async function reverseGeocode(lat, lon) {
   return '';
 }
 async function loadWeather(lat, lon, label) {
+  showCities(false);          // a search always returns to the forecast view
   setLoading(true);
   currentLat=lat; currentLon=lon;
   const url = 'https://api.open-meteo.com/v1/forecast'
@@ -1896,6 +1960,7 @@ function showError(msg,hint) {
 function gotoCity(lat, lon, label) {
   cityInput.value = label || '';
   committedCity = !!label; committedLabel = label || '';
+  syncClearBtn();
   loadWeather(lat, lon, label || 'Your location');
 }
 function loadLast() {
