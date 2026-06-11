@@ -145,13 +145,17 @@ body::before {
 .subtitle { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
 
 /* ── THEME SWITCH ── */
-.theme-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
-.theme-switch { display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; }
+/* Single row: in wider (non-cyber) fonts the controls used to wrap the World
+   button onto the line below — keep them on one line and scroll if it ever
+   overflows a very narrow screen. */
+.theme-bar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-top: 18px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.theme-bar::-webkit-scrollbar { display: none; }
+.theme-switch { flex-shrink: 0; display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; }
 .theme-switch button {
   background: transparent; border: none; cursor: pointer;
   color: var(--muted); font-family: var(--font); font-size: 11px;
-  letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 14px; border-radius: 99px;
-  transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+  letter-spacing: 0.04em; text-transform: uppercase; padding: 7px 11px; border-radius: 99px;
+  transition: all 0.2s; -webkit-tap-highlight-color: transparent; white-space: nowrap;
 }
 .theme-switch button:hover { color: var(--text); }
 .theme-switch button.active { background: var(--accent); color: var(--bg); font-weight: 500; }
@@ -161,10 +165,11 @@ body::before {
 }
 :root[data-theme="ai"] .mode-tag { color: var(--accent); border-color: rgba(var(--accent-rgb),0.4); box-shadow: 0 0 14px -4px var(--accent); }
 .globe-btn {
+  flex-shrink: 0; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
   background: var(--surface); border: 1px solid var(--border); color: var(--text);
-  font-family: var(--font); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 8px 14px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+  font-family: var(--font); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 7px 12px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
 }
 .globe-btn:hover { border-color: var(--accent); color: var(--accent); }
 .globe-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 500; }
