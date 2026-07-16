@@ -12,19 +12,14 @@
 <meta name="apple-mobile-web-app-title" content="SkyCast">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
-<script>try{var t=localStorage.getItem('skycast-theme');document.documentElement.setAttribute('data-theme', t==='live'?'live':'ios');}catch(e){}</script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-/* ════════════════ THEMES ════════════════
-   Palettes selected via [data-theme] on <html>:
-   · ios   – iPhone-Weather-style default: weather-tinted sky gradient,
-             frosted translucent cards, big thin temperature, system font
-   · live  – animated background reflects the current weather (rain/sun/snow…)
-   Both are "live": the sky follows [data-live] set from the current hour.  */
-
-:root { --font: 'DM Mono', monospace; }   /* default UI font (overridden per theme) */
+/* ════════════════ THEME ════════════════
+   Single UI: iPhone-Weather-style cards/typography (frosted translucent
+   panels, system font, big thin temperature) on a live sky — the background
+   gradient follows [data-live] (set from the current hour's weather) and
+   #liveCanvas animates rain/snow/lightning/stars on top of it.  */
 
 :root[data-theme="ios"] {
   --bg:#2b3f77; --surface:rgba(255,255,255,0.10); --card:rgba(28,34,72,0.40); --border:rgba(255,255,255,0.16);
@@ -34,13 +29,6 @@
   --radius:18px; --card-blur:24px;
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-}
-:root[data-theme="live"] {
-  --bg:#1a2233; --surface:rgba(255,255,255,0.08); --card:rgba(16,22,38,0.28); --border:rgba(255,255,255,0.16);
-  --accent:#7cc4ff; --accent2:#ffd166; --accent3:#5eead4;
-  --text:#f2f6ff; --muted:#c2cde0; --bull:#7cc4ff; --bear:#ff8a90;
-  --accent-rgb:124,196,255; --accent3-rgb:94,234,212;
-  --radius:18px; --display:'DM Serif Display'; --card-blur:13px;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -103,22 +91,9 @@ body::before {
 :root[data-theme="ios"] .modal-bar h3 { font-style: normal; font-weight: 600; }
 :root[data-theme="ios"] .card { box-shadow: 0 12px 32px -20px rgba(0,0,0,0.5); }
 :root[data-theme="ios"] .card-title { color: rgba(255,255,255,0.72); }
-:root[data-theme="ios"] .theme-switch button.active, :root[data-theme="ios"] .globe-btn.active,
-:root[data-theme="ios"] .tabbar button.active { color: #1c3a5e; }
+:root[data-theme="ios"] .globe-btn.active { color: #1c3a5e; }
 
-/* Live theme: background sky changes with the current weather (set via data-live);
-   a scrim keeps light text readable, and #liveCanvas adds rain/snow/etc. */
-:root[data-theme="live"] body { background:#1a2233; transition: background 1s ease; }
-:root[data-theme="live"][data-live="clear-day"]   body { background: linear-gradient(170deg,#2e7bc4 0%,#7db9e8 70%,#cfe7fb 100%); }
-:root[data-theme="live"][data-live="clear-night"] body { background: linear-gradient(180deg,#070d22 0%,#142a55 100%); }
-:root[data-theme="live"][data-live="clouds"]      body { background: linear-gradient(180deg,#54627a 0%,#8893a6 100%); }
-:root[data-theme="live"][data-live="rain"]        body { background: linear-gradient(180deg,#2c3543 0%,#4a5667 100%); }
-:root[data-theme="live"][data-live="storm"]       body { background: linear-gradient(180deg,#1c2230 0%,#343c4d 100%); }
-:root[data-theme="live"][data-live="snow"]        body { background: linear-gradient(180deg,#6f7e93 0%,#aebccd 100%); }
-:root[data-theme="live"][data-live="fog"]         body { background: linear-gradient(180deg,#71777f 0%,#9aa1a9 100%); }
-:root[data-theme="live"] body::before { background: linear-gradient(180deg, rgba(8,12,20,0.18) 0%, rgba(8,12,20,0.5) 100%); animation: none; }
-#liveCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0.6s ease; }
-:root[data-theme="live"] #liveCanvas { opacity: 1; }
+#liveCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 * { position: relative; z-index: 1; }
 
 /* ── HEADER ── */
@@ -136,15 +111,6 @@ body::before {
    overflows a very narrow screen. */
 .theme-bar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-top: 18px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .theme-bar::-webkit-scrollbar { display: none; }
-.theme-switch { flex-shrink: 0; display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; }
-.theme-switch button {
-  background: transparent; border: none; cursor: pointer;
-  color: var(--muted); font-family: var(--font); font-size: 11px;
-  letter-spacing: 0.04em; text-transform: uppercase; padding: 7px 11px; border-radius: 99px;
-  transition: all 0.2s; -webkit-tap-highlight-color: transparent; white-space: nowrap;
-}
-.theme-switch button:hover { color: var(--text); }
-.theme-switch button.active { background: var(--accent); color: var(--bg); font-weight: 500; }
 .mode-tag {
   font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--accent2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 99px;
@@ -169,7 +135,6 @@ body::before {
   backdrop-filter: blur(var(--card-blur)); -webkit-backdrop-filter: blur(var(--card-blur));
   transition: background 0.4s ease, border-color 0.4s ease;
 }
-:root[data-theme="live"] .card { box-shadow: 0 16px 40px -24px rgba(0,0,0,0.7); }
 .card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; }
 .card-title.accent  { color: var(--accent); }
 .card-title.accent2 { color: var(--accent2); }
@@ -202,13 +167,10 @@ body::before {
 /* AUTOCOMPLETE */
 .ac-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); z-index: 200; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
 /* Both themes are translucent — keep the suggestions list solid enough to read. */
-:root[data-theme="live"] .search-input-wrap input { background: rgba(14,20,34,0.86); }
 :root[data-theme="ios"]  .search-input-wrap input { background: rgba(255,255,255,0.16); }
 :root[data-theme="ios"]  .search-input-wrap input::placeholder { color: rgba(255,255,255,0.6); }
-:root[data-theme="live"] .ac-list { background: rgba(14,20,34,0.94); }
 :root[data-theme="ios"]  .ac-list { background: rgba(28,48,78,0.95); }
-:root[data-theme="live"] .ac-item:hover, :root[data-theme="live"] .ac-item.focused,
-:root[data-theme="ios"]  .ac-item:hover, :root[data-theme="ios"]  .ac-item.focused { background: rgba(255,255,255,0.10); }
+:root[data-theme="ios"] .ac-item:hover, :root[data-theme="ios"] .ac-item.focused { background: rgba(255,255,255,0.10); }
 .ac-item { padding: 11px 14px; cursor: pointer; font-size: 12px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
 .ac-item:last-child { border-bottom: none; }
 .ac-item .ac-city { font-weight: 500; color: var(--text); }
@@ -467,13 +429,9 @@ td.rain-c { color: var(--accent3); }
 <div class="header">
   <div class="title-row">
     <h1>Sky<span>Cast</span></h1>
-    <span class="mode-tag" id="modeTag">☀︎ Weather</span>
+    <span class="mode-tag" id="modeTag">◉ Live</span>
   </div>
   <div class="theme-bar">
-    <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
-      <button data-theme="ios">Weather</button>
-      <button data-theme="live">Live</button>
-    </div>
     <button class="globe-btn" id="globeBtn" type="button" title="World cities map" aria-label="World cities map" aria-pressed="false">🌍 <span>World</span></button>
   </div>
 </div>
@@ -1083,23 +1041,12 @@ function computeBestDay(days){
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
-const MODE_LABELS = { ios:'☀︎ Weather', live:'◉ Live Weather' };
-function setTheme(name){
-  if(!MODE_LABELS[name]) name='ios';
-  document.documentElement.setAttribute('data-theme', name);
-  try { localStorage.setItem('skycast-theme', name); } catch(e){}
-  document.querySelectorAll('#themeSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.theme===name));
-  document.getElementById('modeTag').textContent = MODE_LABELS[name];
-  name==='live' ? startLive() : stopLive();
-  syncSky();   // both themes tint the sky from the current hour's weather
-}
-// Set data-live (the sky tint) from the current hour — used by BOTH themes;
-// the live theme additionally animates rain/snow/etc. on its canvas.
+// Single UI: iPhone-style cards on a live sky. data-live tints the gradient
+// from the current hour's weather; #liveCanvas animates rain/snow/etc on top.
 function syncSky(){
   if (WX && WX.hourly){ const i=nowHourIdx(WX); setLiveMode(liveModeFor(WX.hourly.weather_code[i], WX.hourly.is_day[i])); }
   else setLiveMode('clear-day');
 }
-document.querySelectorAll('#themeSwitch button').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
 
 // ── LIVE WEATHER CANVAS — background reflects current conditions ──
 let liveRAF=null, lcanvas, lctx, lparts=[], liveMode='clear-day', liveFlash=0, liveT=0;
@@ -1634,7 +1581,10 @@ function renderWeather(d) {
   // 7-DAY
   const wkGrid=document.getElementById('weekGrid'); wkGrid.innerHTML='';
   const days=d.daily;
-  const gMin=Math.min(...days.temperature_2m_min), gMax=Math.max(...days.temperature_2m_max), range=gMax-gMin||1;
+  // Bar scale spans only the first week (the rows that show bars): left edge =
+  // coldest low of those days, right edge = hottest high. Long-range rows
+  // (8-16) are too inaccurate — they get no bar at all.
+  const gMin=Math.min(...days.temperature_2m_min.slice(0,7)), gMax=Math.max(...days.temperature_2m_max.slice(0,7)), range=gMax-gMin||1;
   const bestIdx=computeBestDay(days);
   const bestEl=document.getElementById('bestDay');
   if (bestIdx>=0) {
@@ -1668,14 +1618,18 @@ function renderWeather(d) {
     const row=document.createElement('div'); row.className='week-row'+(i===bestIdx?' best':'')+(i>=7?' far':'');
     // iPhone-style bar: gradient colored by the day's lo→hi temps; today's row
     // gets a white dot marking the current temperature within the range.
-    let nowDot='';
-    if (i===0 && d.current && d.current.temperature_2m!=null){
-      const p=Math.max(+barL, Math.min(+barL + +barW, (d.current.temperature_2m-gMin)/range*100));
-      nowDot=`<span class="wr-now" style="left:${p.toFixed(1)}%"></span>`;
+    let barHtml='<div></div>';                       // long-range rows: no bar
+    if (i<7){
+      let nowDot='';
+      if (i===0 && d.current && d.current.temperature_2m!=null){
+        const p=Math.max(+barL, Math.min(+barL + +barW, (d.current.temperature_2m-gMin)/range*100));
+        nowDot=`<span class="wr-now" style="left:${p.toFixed(1)}%"></span>`;
+      }
+      barHtml=`<div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%;background:linear-gradient(90deg,${tempColor(lo)},${tempColor(hi)})"></div>${nowDot}</div>`;
     }
     row.innerHTML=`<div class="wr-day">${i===bestIdx?'⭐ ':''}${name}<small>${dlbl}</small></div>
       <div class="wr-icon">${ic.i}</div>
-      <div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%;background:linear-gradient(90deg,${tempColor(lo)},${tempColor(hi)})"></div>${nowDot}</div>
+      ${barHtml}
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
     row.addEventListener('click',()=>openDayModal(i));   // open the centred day popup
     (i>=7 && farBox ? farBox : wkGrid).appendChild(row);
@@ -1927,7 +1881,7 @@ function autoLocate() {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
-setTheme(document.documentElement.getAttribute('data-theme') || 'ios');
+startLive();   // the animated live-weather background is always on
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
 
 // Keep "Now" honest: when the location's clock rolls into the next hour,
