@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="current">
+<html lang="en" data-theme="ios">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -12,34 +12,28 @@
 <meta name="apple-mobile-web-app-title" content="SkyCast">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
-<script>try{var t=localStorage.getItem('skycast-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&family=Chakra+Petch:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem('skycast-theme');document.documentElement.setAttribute('data-theme', t==='live'?'live':'ios');}catch(e){}</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ════════════════ THEMES ════════════════
    Palettes selected via [data-theme] on <html>:
-   · current    – the original dark / lime editorial look (default)
-   · cyber      – sci-fi HUD: neon grid, bracketed angular cards, mono readouts
-   · live        – background reflects the current weather (rain/sun/snow…)
-   · ai         – "Neural" teal/blue AI-entity look + live synapse canvas  */
+   · ios   – iPhone-Weather-style default: weather-tinted sky gradient,
+             frosted translucent cards, big thin temperature, system font
+   · live  – animated background reflects the current weather (rain/sun/snow…)
+   Both are "live": the sky follows [data-live] set from the current hour.  */
 
 :root { --font: 'DM Mono', monospace; }   /* default UI font (overridden per theme) */
 
-:root[data-theme="current"] {
-  --bg:#0e0e0e; --surface:#161616; --card:#1c1c1c; --border:#2a2a2a;
-  --accent:#c8f060; --accent2:#f0b860; --accent3:#60c8f0;
-  --text:#f0ede8; --muted:#888; --bull:#c8f060; --bear:#ff6b6b;
-  --accent-rgb:200,240,96; --accent3-rgb:96,200,240;
-  --radius:16px; --display:'DM Serif Display'; --card-blur:0px;
-}
-:root[data-theme="cyber"] {
-  --bg:#04080f; --surface:rgba(10,22,34,0.5); --card:rgba(8,18,30,0.42); --border:rgba(25,227,255,0.30);
-  --accent:#19e3ff; --accent2:#ffb000; --accent3:#5cff9d;
-  --text:#d7f4ff; --muted:#5f8499; --bull:#5cff9d; --bear:#ff5b6e;
-  --accent-rgb:25,227,255; --accent3-rgb:92,255,157;
-  --radius:4px; --display:'Orbitron'; --card-blur:10px;
-  --font:'Share Tech Mono', monospace;
+:root[data-theme="ios"] {
+  --bg:#3f6ea6; --surface:rgba(255,255,255,0.14); --card:rgba(255,255,255,0.13); --border:rgba(255,255,255,0.22);
+  --accent:#ffffff; --accent2:#ffd60a; --accent3:#aee8ff;
+  --text:#ffffff; --muted:rgba(255,255,255,0.66); --bull:#b7f5c1; --bear:#ffb3b8;
+  --accent-rgb:255,255,255; --accent3-rgb:174,232,255;
+  --radius:18px; --card-blur:24px;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 :root[data-theme="live"] {
   --bg:#1a2233; --surface:rgba(255,255,255,0.08); --card:rgba(16,22,38,0.28); --border:rgba(255,255,255,0.16);
@@ -47,14 +41,6 @@
   --text:#f2f6ff; --muted:#c2cde0; --bull:#7cc4ff; --bear:#ff8a90;
   --accent-rgb:124,196,255; --accent3-rgb:94,234,212;
   --radius:18px; --display:'DM Serif Display'; --card-blur:13px;
-}
-:root[data-theme="ai"] {
-  --bg:#020809; --surface:rgba(8,26,30,0.35); --card:rgba(8,26,30,0.3); --border:rgba(45,230,200,0.22);
-  --accent:#16efc6; --accent2:#38bdf8; --accent3:#5eead4;
-  --text:#e6fff8; --muted:#7fb8b0; --bull:#16efc6; --bear:#ff7a85;
-  --accent-rgb:22,239,198; --accent3-rgb:94,234,212;
-  --radius:14px; --display:'Orbitron'; --card-blur:14px;
-  --font:'Chakra Petch', 'Share Tech Mono', monospace;   /* futuristic, readable */
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,34 +67,24 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-/* AI theme: deep bio-luminescent field behind the synapse canvas */
-:root[data-theme="ai"] body::before {
-  background:
-    radial-gradient(ellipse 55% 45% at 18% 10%, rgba(22,239,198,0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 45% 50% at 85% 22%, rgba(56,189,248,0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 65% 55% at 50% 115%, rgba(22,239,198,0.08) 0%, transparent 55%);
-  animation: aiPulse 11s ease-in-out infinite alternate;
-}
-@keyframes aiPulse { from{opacity:0.85;} to{opacity:1;} }
-
-/* ── Cyber HUD theme ── scanner grid, bracketed angular panels, neon glow */
-:root[data-theme="cyber"] body::before {
-  background:
-    linear-gradient(rgba(25,227,255,0.05) 1px, transparent 1px) 0 0/100% 42px,
-    linear-gradient(90deg, rgba(25,227,255,0.05) 1px, transparent 1px) 0 0/42px 100%,
-    radial-gradient(ellipse 70% 55% at 50% -5%, rgba(25,227,255,0.12) 0%, transparent 60%);
-}
-:root[data-theme="cyber"] .card { border: 1px solid var(--border); box-shadow: 0 0 26px -12px rgba(25,227,255,0.6); }
-:root[data-theme="cyber"] .card::before, :root[data-theme="cyber"] .card::after { content:''; position:absolute; width:14px; height:14px; pointer-events:none; z-index:2; }
-:root[data-theme="cyber"] .card::before { top:-1px; left:-1px; border-top:2px solid var(--accent); border-left:2px solid var(--accent); }
-:root[data-theme="cyber"] .card::after { bottom:-1px; right:-1px; border-bottom:2px solid var(--accent); border-right:2px solid var(--accent); }
-:root[data-theme="cyber"] .card-title { padding-left:12px; }
-:root[data-theme="cyber"] .card-title::before { content:''; position:absolute; left:0; top:1px; bottom:1px; width:3px; background:var(--accent); box-shadow:0 0 8px var(--accent); }
-:root[data-theme="cyber"] .search input, :root[data-theme="cyber"] .icon-btn, :root[data-theme="cyber"] .btn-search,
-:root[data-theme="cyber"] .unit-toggle, :root[data-theme="cyber"] .theme-switch, :root[data-theme="cyber"] .tabbar,
-:root[data-theme="cyber"] .mini-btn, :root[data-theme="cyber"] .unit-toggle button, :root[data-theme="cyber"] .theme-switch button,
-:root[data-theme="cyber"] .tabbar button { border-radius: 4px; }
-:root[data-theme="cyber"] .brand-mark { filter: drop-shadow(0 0 8px var(--accent)); }
+/* ── iOS theme ── iPhone-Weather look: weather-tinted sky (via data-live),
+   frosted cards, subtle scrim for readability. */
+:root[data-theme="ios"] body { background: linear-gradient(180deg,#2f7fd4 0%,#5ba3e0 55%,#a3cdf0 100%); transition: background 1s ease; }
+:root[data-theme="ios"][data-live="clear-day"]   body { background: linear-gradient(180deg,#2f7fd4 0%,#5ba3e0 55%,#a3cdf0 100%); }
+:root[data-theme="ios"][data-live="clear-night"] body { background: linear-gradient(180deg,#0b1024 0%,#1c2547 60%,#2c3a66 100%); }
+:root[data-theme="ios"][data-live="clouds"]      body { background: linear-gradient(180deg,#5b6a80 0%,#8fa0b3 100%); }
+:root[data-theme="ios"][data-live="rain"]        body { background: linear-gradient(180deg,#39495b 0%,#5d6e80 100%); }
+:root[data-theme="ios"][data-live="storm"]       body { background: linear-gradient(180deg,#202633 0%,#3d4657 100%); }
+:root[data-theme="ios"][data-live="snow"]        body { background: linear-gradient(180deg,#8394a8 0%,#c3cfdc 100%); }
+:root[data-theme="ios"][data-live="fog"]         body { background: linear-gradient(180deg,#7d858e 0%,#a8aeb5 100%); }
+:root[data-theme="ios"] body::before { background: linear-gradient(180deg, rgba(0,5,25,0.04) 0%, rgba(0,8,30,0.30) 100%); }
+:root[data-theme="ios"] .header h1 { font-style: normal; font-weight: 700; letter-spacing: -0.02em; }
+:root[data-theme="ios"] .today-temp { font-style: normal; font-weight: 200; letter-spacing: -0.03em; }
+:root[data-theme="ios"] .modal-bar h3 { font-style: normal; font-weight: 600; }
+:root[data-theme="ios"] .card { box-shadow: 0 12px 32px -20px rgba(0,0,0,0.5); }
+:root[data-theme="ios"] .card-title { color: rgba(255,255,255,0.72); }
+:root[data-theme="ios"] .theme-switch button.active, :root[data-theme="ios"] .globe-btn.active,
+:root[data-theme="ios"] .tabbar button.active { color: #1c3a5e; }
 
 /* Live theme: background sky changes with the current weather (set via data-live);
    a scrim keeps light text readable, and #liveCanvas adds rain/snow/etc. */
@@ -125,23 +101,13 @@ body::before {
 :root[data-theme="live"] #liveCanvas { opacity: 1; }
 * { position: relative; z-index: 1; }
 
-/* node-network canvas — only visible in AI theme */
-#neuralCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0.6s ease; }
-:root[data-theme="ai"] #neuralCanvas { opacity: 1; }
-
 /* ── HEADER ── */
 .header { padding: 40px 20px 24px; max-width: 1200px; margin: 0 auto; }
 .title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 12px; }
 .header h1 { font-family: var(--display); font-style: italic; font-size: clamp(32px,7vw,52px); line-height: 1.05; }
-:root[data-theme="ai"] .header h1 { font-style: normal; letter-spacing: 0.02em; }
 .header h1 span { color: var(--accent); font-style: normal; }
-:root[data-theme="ai"] .header h1 span {
-  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  animation: aiSheen 6s linear infinite; background-size: 200% auto;
-}
-@keyframes aiSheen { to { background-position: 200% center; } }
+:root[data-theme="ios"] .header h1 span { color: #ffd60a; }
 .subtitle { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
 
 /* ── THEME SWITCH ── */
@@ -163,7 +129,6 @@ body::before {
   font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--accent2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 99px;
 }
-:root[data-theme="ai"] .mode-tag { color: var(--accent); border-color: rgba(var(--accent-rgb),0.4); box-shadow: 0 0 14px -4px var(--accent); }
 .globe-btn {
   flex-shrink: 0; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -173,7 +138,6 @@ body::before {
 }
 .globe-btn:hover { border-color: var(--accent); color: var(--accent); }
 .globe-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 500; }
-:root[data-theme="cyber"] .globe-btn { border-radius: 4px; }
 
 /* ── WRAPPER ── */
 .wrapper { max-width: 1200px; margin: 0 auto; padding: 0 20px 80px; }
@@ -185,7 +149,6 @@ body::before {
   backdrop-filter: blur(var(--card-blur)); -webkit-backdrop-filter: blur(var(--card-blur));
   transition: background 0.4s ease, border-color 0.4s ease;
 }
-:root[data-theme="ai"] .card { box-shadow: 0 0 0 1px rgba(var(--accent-rgb),0.08), 0 18px 50px -22px rgba(var(--accent-rgb),0.55); }
 :root[data-theme="live"] .card { box-shadow: 0 16px 40px -24px rgba(0,0,0,0.7); }
 .card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; }
 .card-title.accent  { color: var(--accent); }
@@ -218,14 +181,14 @@ body::before {
 
 /* AUTOCOMPLETE */
 .ac-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); z-index: 200; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
-/* The translucent Live/Neural themes make the search hard to read — make the
-   input and suggestions more solid for those two only. */
+/* Both themes are translucent — keep the suggestions list solid enough to read. */
 :root[data-theme="live"] .search-input-wrap input { background: rgba(14,20,34,0.86); }
-:root[data-theme="ai"]   .search-input-wrap input { background: rgba(4,16,18,0.88); }
+:root[data-theme="ios"]  .search-input-wrap input { background: rgba(255,255,255,0.16); }
+:root[data-theme="ios"]  .search-input-wrap input::placeholder { color: rgba(255,255,255,0.6); }
 :root[data-theme="live"] .ac-list { background: rgba(14,20,34,0.94); }
-:root[data-theme="ai"]   .ac-list { background: rgba(4,16,18,0.95); }
+:root[data-theme="ios"]  .ac-list { background: rgba(28,48,78,0.95); }
 :root[data-theme="live"] .ac-item:hover, :root[data-theme="live"] .ac-item.focused,
-:root[data-theme="ai"]   .ac-item:hover, :root[data-theme="ai"]   .ac-item.focused { background: rgba(255,255,255,0.10); }
+:root[data-theme="ios"]  .ac-item:hover, :root[data-theme="ios"]  .ac-item.focused { background: rgba(255,255,255,0.10); }
 .ac-item { padding: 11px 14px; cursor: pointer; font-size: 12px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
 .ac-item:last-child { border-bottom: none; }
 .ac-item .ac-city { font-weight: 500; color: var(--text); }
@@ -245,7 +208,6 @@ body::before {
 .today-main { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
 .today-icon { font-size: clamp(3rem,10vw,4.5rem); line-height: 1; }
 .today-temp { font-family: var(--display); font-style: italic; font-size: clamp(2.8rem,10vw,4.2rem); line-height: 1; color: var(--accent); }
-:root[data-theme="ai"] .today-temp { font-style: normal; }
 .today-feelslabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 2px; }
 .today-actual { font-size: 13px; color: var(--muted); margin-top: 5px; }
 .today-actual b { color: var(--text); font-weight: 600; }
@@ -403,7 +365,6 @@ td.rain-c { color: var(--accent3); }
 .modal.show .modal-panel { transform: none; }
 .modal-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .modal-bar h3 { font-family: var(--display); font-style: italic; font-size: 20px; font-weight: 400; }
-:root[data-theme="ai"] .modal-bar h3 { font-style: normal; }
 .modal-close { background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 13px; }
 .modal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 8px; }
 .modal-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
@@ -480,20 +441,17 @@ td.rain-c { color: var(--accent3); }
 </head>
 <body>
 
-<canvas id="neuralCanvas" aria-hidden="true"></canvas>
 <canvas id="liveCanvas" aria-hidden="true"></canvas>
 
 <div class="header">
   <div class="title-row">
     <h1>Sky<span>Cast</span></h1>
-    <span class="mode-tag" id="modeTag">Classic</span>
+    <span class="mode-tag" id="modeTag">☀︎ Weather</span>
   </div>
   <div class="theme-bar">
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
-      <button data-theme="current">Current</button>
-      <button data-theme="cyber">Cyber</button>
+      <button data-theme="ios">Weather</button>
       <button data-theme="live">Live</button>
-      <button data-theme="ai">Neural</button>
     </div>
     <button class="globe-btn" id="globeBtn" type="button" title="World cities map" aria-label="World cities map" aria-pressed="false">🌍 <span>World</span></button>
   </div>
@@ -1086,90 +1044,23 @@ function computeBestDay(days){
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
-const MODE_LABELS = { current:'Classic', cyber:'▣ HUD Online', live:'◉ Live Weather', ai:'⚡ Neural Entity Online' };
+const MODE_LABELS = { ios:'☀︎ Weather', live:'◉ Live Weather' };
 function setTheme(name){
-  if(!MODE_LABELS[name]) name='current';
+  if(!MODE_LABELS[name]) name='ios';
   document.documentElement.setAttribute('data-theme', name);
   try { localStorage.setItem('skycast-theme', name); } catch(e){}
   document.querySelectorAll('#themeSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.theme===name));
   document.getElementById('modeTag').textContent = MODE_LABELS[name];
-  name==='ai' ? startNeural() : stopNeural();
   name==='live' ? startLive() : stopLive();
+  syncSky();   // both themes tint the sky from the current hour's weather
+}
+// Set data-live (the sky tint) from the current hour — used by BOTH themes;
+// the live theme additionally animates rain/snow/etc. on its canvas.
+function syncSky(){
+  if (WX && WX.hourly){ const i=nowHourIdx(WX); setLiveMode(liveModeFor(WX.hourly.weather_code[i], WX.hourly.is_day[i])); }
+  else setLiveMode('clear-day');
 }
 document.querySelectorAll('#themeSwitch button').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
-
-// ── NEURAL CANVAS — synaptic network (AI theme) ──────────────────
-// Neurons drift slowly; nearby ones link with dendrites; signals (pulses)
-// travel along links, make the target neuron "fire" (flare) and sometimes
-// chain onward — a living neural net rather than flat dots.
-const NEURAL_D=150;
-let neuralRAF=null, nodes=[], pulses=[], canvas, ctx;
-function initNeural(){
-  canvas = document.getElementById('neuralCanvas');
-  ctx = canvas.getContext('2d');
-  resizeNeural();
-  window.addEventListener('resize', ()=>{ if(neuralRAF){ resizeNeural(); buildNodes(); } });
-}
-function resizeNeural(){ const dpr=Math.min(devicePixelRatio||1,2); canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); }
-function buildNodes(){
-  const n = Math.min(64, Math.round(innerWidth*innerHeight/24000));
-  nodes = Array.from({length:n},()=>({
-    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
-    vx:(Math.random()-0.5)*0.28, vy:(Math.random()-0.5)*0.28,
-    glow:0, ph:Math.random()*Math.PI*2
-  }));
-  pulses=[];
-}
-function spawnPulse(a, adj){
-  if (pulses.length>=30 || !adj[a] || !adj[a].length) return;
-  const b=adj[a][(Math.random()*adj[a].length)|0];
-  pulses.push({a, b, t:0, sp:0.012+Math.random()*0.022});
-}
-function drawNeural(){
-  const W=innerWidth, H=innerHeight;
-  ctx.clearRect(0,0,W,H);
-  const adj=nodes.map(()=>[]);
-  for (const p of nodes){
-    p.x+=p.vx; p.y+=p.vy; p.ph+=0.02; p.glow*=0.93;
-    if (p.x<0||p.x>W) p.vx*=-1;
-    if (p.y<0||p.y>H) p.vy*=-1;
-  }
-  // dendrites
-  ctx.lineWidth=1;
-  for (let i=0;i<nodes.length;i++){
-    for (let j=i+1;j<nodes.length;j++){
-      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, dist=Math.hypot(dx,dy);
-      if (dist<NEURAL_D){
-        adj[i].push(j); adj[j].push(i);
-        ctx.strokeStyle=`rgba(22,239,198,${0.10*(1-dist/NEURAL_D)})`;
-        ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
-      }
-    }
-  }
-  // fire a new signal occasionally
-  if (Math.random()<0.22){ spawnPulse((Math.random()*nodes.length)|0, adj); }
-  // signals travelling along dendrites
-  ctx.shadowColor='rgba(22,239,198,0.9)'; ctx.shadowBlur=10;
-  for (let k=pulses.length-1;k>=0;k--){
-    const pu=pulses[k], a=nodes[pu.a], b=nodes[pu.b];
-    pu.t+=pu.sp;
-    const x=a.x+(b.x-a.x)*pu.t, y=a.y+(b.y-a.y)*pu.t;
-    ctx.fillStyle='rgba(180,255,240,0.95)';
-    ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
-    if (pu.t>=1){ b.glow=1; pulses.splice(k,1); if (Math.random()<0.55) spawnPulse(pu.b, adj); }
-  }
-  // neurons (soma) with bloom that flares when fired
-  for (const p of nodes){
-    const r=1.5+p.glow*2.4;
-    ctx.shadowBlur=6+p.glow*16;
-    ctx.fillStyle=`rgba(${94+p.glow*120},${234},${212},${0.5+0.25*Math.sin(p.ph)+p.glow*0.45})`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
-  }
-  ctx.shadowBlur=0;
-  neuralRAF=requestAnimationFrame(drawNeural);
-}
-function startNeural(){ if(neuralRAF) return; if(!canvas) initNeural(); resizeNeural(); buildNodes(); neuralRAF=requestAnimationFrame(drawNeural); }
-function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF=null; ctx&&ctx.clearRect(0,0,innerWidth,innerHeight); } }
 
 // ── LIVE WEATHER CANVAS — background reflects current conditions ──
 let liveRAF=null, lcanvas, lctx, lparts=[], liveMode='clear-day', liveFlash=0, liveT=0;
@@ -1223,11 +1114,8 @@ function drawLive(){
 }
 function setLiveMode(mode){ liveMode=mode; document.documentElement.setAttribute('data-live',mode); if(liveRAF) buildLive(); }
 function startLive(){ if(liveRAF) return; if(!lcanvas) initLive(); resizeLive();
-  // Use the current *hour's* condition (same as the hourly "Now" card), so the
-  // background matches what the strip shows.
-  if (WX && WX.hourly){ const i=nowHourIdx(WX); setLiveMode(liveModeFor(WX.hourly.weather_code[i], WX.hourly.is_day[i])); }
-  else if (WX && WX.current) setLiveMode(liveModeFor(WX.current.weather_code, WX.current.is_day));
-  else setLiveMode('clear-day');
+  // Sky tint from the current *hour's* condition (same as the hourly "Now" card).
+  syncSky();
   buildLive(); liveRAF=requestAnimationFrame(drawLive); }
 function stopLive(){ if(liveRAF){ cancelAnimationFrame(liveRAF); liveRAF=null; lctx&&lctx.clearRect(0,0,innerWidth,innerHeight); } }
 
@@ -1662,11 +1550,10 @@ function renderWeather(d) {
   // Stargazing tonight (clouds + moon) + what-to-wear advice
   renderStargazing(d, start);
   renderWear(d);
-  // If the Live theme is active, sync its background to the *current hour's*
-  // condition — the same code the hourly "Now" card shows — so a 🌦️ now means
-  // a rain background, never a sunny one from a stale/instant current code.
-  if (document.documentElement.getAttribute('data-theme')==='live')
-    setLiveMode(liveModeFor(d.hourly.weather_code[start], d.hourly.is_day[start]));
+  // Sync the sky tint (both themes) to the *current hour's* condition — the
+  // same code the hourly "Now" card shows — so a 🌦️ now means a rain sky,
+  // never a sunny one from a stale/instant current code.
+  setLiveMode(liveModeFor(d.hourly.weather_code[start], d.hourly.is_day[start]));
 
   // HOURLY — next 24h starting from the location's current hour (not the browser's)
   const scroll=document.getElementById('hourlyScroll'); scroll.innerHTML='';
@@ -1994,7 +1881,7 @@ function autoLocate() {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
-setTheme(document.documentElement.getAttribute('data-theme') || 'current');
+setTheme(document.documentElement.getAttribute('data-theme') || 'ios');
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
 
 // Keep "Now" honest: when the location's clock rolls into the next hour,
