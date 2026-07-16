@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="current">
+<html lang="en" data-theme="ios">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -12,34 +12,28 @@
 <meta name="apple-mobile-web-app-title" content="SkyCast">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
-<script>try{var t=localStorage.getItem('skycast-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Orbitron:wght@500;700&family=Chakra+Petch:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem('skycast-theme');document.documentElement.setAttribute('data-theme', t==='live'?'live':'ios');}catch(e){}</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ════════════════ THEMES ════════════════
    Palettes selected via [data-theme] on <html>:
-   · current    – the original dark / lime editorial look (default)
-   · cyber      – sci-fi HUD: neon grid, bracketed angular cards, mono readouts
-   · live        – background reflects the current weather (rain/sun/snow…)
-   · ai         – "Neural" teal/blue AI-entity look + live synapse canvas  */
+   · ios   – iPhone-Weather-style default: weather-tinted sky gradient,
+             frosted translucent cards, big thin temperature, system font
+   · live  – animated background reflects the current weather (rain/sun/snow…)
+   Both are "live": the sky follows [data-live] set from the current hour.  */
 
 :root { --font: 'DM Mono', monospace; }   /* default UI font (overridden per theme) */
 
-:root[data-theme="current"] {
-  --bg:#0e0e0e; --surface:#161616; --card:#1c1c1c; --border:#2a2a2a;
-  --accent:#c8f060; --accent2:#f0b860; --accent3:#60c8f0;
-  --text:#f0ede8; --muted:#888; --bull:#c8f060; --bear:#ff6b6b;
-  --accent-rgb:200,240,96; --accent3-rgb:96,200,240;
-  --radius:16px; --display:'DM Serif Display'; --card-blur:0px;
-}
-:root[data-theme="cyber"] {
-  --bg:#04080f; --surface:rgba(10,22,34,0.5); --card:rgba(8,18,30,0.42); --border:rgba(25,227,255,0.30);
-  --accent:#19e3ff; --accent2:#ffb000; --accent3:#5cff9d;
-  --text:#d7f4ff; --muted:#5f8499; --bull:#5cff9d; --bear:#ff5b6e;
-  --accent-rgb:25,227,255; --accent3-rgb:92,255,157;
-  --radius:4px; --display:'Orbitron'; --card-blur:10px;
-  --font:'Share Tech Mono', monospace;
+:root[data-theme="ios"] {
+  --bg:#3f6ea6; --surface:rgba(255,255,255,0.14); --card:rgba(255,255,255,0.13); --border:rgba(255,255,255,0.22);
+  --accent:#ffffff; --accent2:#ffd60a; --accent3:#aee8ff;
+  --text:#ffffff; --muted:rgba(255,255,255,0.66); --bull:#b7f5c1; --bear:#ffb3b8;
+  --accent-rgb:255,255,255; --accent3-rgb:174,232,255;
+  --radius:18px; --card-blur:24px;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 :root[data-theme="live"] {
   --bg:#1a2233; --surface:rgba(255,255,255,0.08); --card:rgba(16,22,38,0.28); --border:rgba(255,255,255,0.16);
@@ -47,14 +41,6 @@
   --text:#f2f6ff; --muted:#c2cde0; --bull:#7cc4ff; --bear:#ff8a90;
   --accent-rgb:124,196,255; --accent3-rgb:94,234,212;
   --radius:18px; --display:'DM Serif Display'; --card-blur:13px;
-}
-:root[data-theme="ai"] {
-  --bg:#020809; --surface:rgba(8,26,30,0.35); --card:rgba(8,26,30,0.3); --border:rgba(45,230,200,0.22);
-  --accent:#16efc6; --accent2:#38bdf8; --accent3:#5eead4;
-  --text:#e6fff8; --muted:#7fb8b0; --bull:#16efc6; --bear:#ff7a85;
-  --accent-rgb:22,239,198; --accent3-rgb:94,234,212;
-  --radius:14px; --display:'Orbitron'; --card-blur:14px;
-  --font:'Chakra Petch', 'Share Tech Mono', monospace;   /* futuristic, readable */
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,34 +67,24 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-/* AI theme: deep bio-luminescent field behind the synapse canvas */
-:root[data-theme="ai"] body::before {
-  background:
-    radial-gradient(ellipse 55% 45% at 18% 10%, rgba(22,239,198,0.12) 0%, transparent 55%),
-    radial-gradient(ellipse 45% 50% at 85% 22%, rgba(56,189,248,0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 65% 55% at 50% 115%, rgba(22,239,198,0.08) 0%, transparent 55%);
-  animation: aiPulse 11s ease-in-out infinite alternate;
-}
-@keyframes aiPulse { from{opacity:0.85;} to{opacity:1;} }
-
-/* ── Cyber HUD theme ── scanner grid, bracketed angular panels, neon glow */
-:root[data-theme="cyber"] body::before {
-  background:
-    linear-gradient(rgba(25,227,255,0.05) 1px, transparent 1px) 0 0/100% 42px,
-    linear-gradient(90deg, rgba(25,227,255,0.05) 1px, transparent 1px) 0 0/42px 100%,
-    radial-gradient(ellipse 70% 55% at 50% -5%, rgba(25,227,255,0.12) 0%, transparent 60%);
-}
-:root[data-theme="cyber"] .card { border: 1px solid var(--border); box-shadow: 0 0 26px -12px rgba(25,227,255,0.6); }
-:root[data-theme="cyber"] .card::before, :root[data-theme="cyber"] .card::after { content:''; position:absolute; width:14px; height:14px; pointer-events:none; z-index:2; }
-:root[data-theme="cyber"] .card::before { top:-1px; left:-1px; border-top:2px solid var(--accent); border-left:2px solid var(--accent); }
-:root[data-theme="cyber"] .card::after { bottom:-1px; right:-1px; border-bottom:2px solid var(--accent); border-right:2px solid var(--accent); }
-:root[data-theme="cyber"] .card-title { padding-left:12px; }
-:root[data-theme="cyber"] .card-title::before { content:''; position:absolute; left:0; top:1px; bottom:1px; width:3px; background:var(--accent); box-shadow:0 0 8px var(--accent); }
-:root[data-theme="cyber"] .search input, :root[data-theme="cyber"] .icon-btn, :root[data-theme="cyber"] .btn-search,
-:root[data-theme="cyber"] .unit-toggle, :root[data-theme="cyber"] .theme-switch, :root[data-theme="cyber"] .tabbar,
-:root[data-theme="cyber"] .mini-btn, :root[data-theme="cyber"] .unit-toggle button, :root[data-theme="cyber"] .theme-switch button,
-:root[data-theme="cyber"] .tabbar button { border-radius: 4px; }
-:root[data-theme="cyber"] .brand-mark { filter: drop-shadow(0 0 8px var(--accent)); }
+/* ── iOS theme ── iPhone-Weather look: weather-tinted sky (via data-live),
+   frosted cards, subtle scrim for readability. */
+:root[data-theme="ios"] body { background: linear-gradient(180deg,#2f7fd4 0%,#5ba3e0 55%,#a3cdf0 100%); transition: background 1s ease; }
+:root[data-theme="ios"][data-live="clear-day"]   body { background: linear-gradient(180deg,#2f7fd4 0%,#5ba3e0 55%,#a3cdf0 100%); }
+:root[data-theme="ios"][data-live="clear-night"] body { background: linear-gradient(180deg,#0b1024 0%,#1c2547 60%,#2c3a66 100%); }
+:root[data-theme="ios"][data-live="clouds"]      body { background: linear-gradient(180deg,#5b6a80 0%,#8fa0b3 100%); }
+:root[data-theme="ios"][data-live="rain"]        body { background: linear-gradient(180deg,#39495b 0%,#5d6e80 100%); }
+:root[data-theme="ios"][data-live="storm"]       body { background: linear-gradient(180deg,#202633 0%,#3d4657 100%); }
+:root[data-theme="ios"][data-live="snow"]        body { background: linear-gradient(180deg,#8394a8 0%,#c3cfdc 100%); }
+:root[data-theme="ios"][data-live="fog"]         body { background: linear-gradient(180deg,#7d858e 0%,#a8aeb5 100%); }
+:root[data-theme="ios"] body::before { background: linear-gradient(180deg, rgba(0,5,25,0.04) 0%, rgba(0,8,30,0.30) 100%); }
+:root[data-theme="ios"] .header h1 { font-style: normal; font-weight: 700; letter-spacing: -0.02em; }
+:root[data-theme="ios"] .today-temp { font-style: normal; font-weight: 200; letter-spacing: -0.03em; }
+:root[data-theme="ios"] .modal-bar h3 { font-style: normal; font-weight: 600; }
+:root[data-theme="ios"] .card { box-shadow: 0 12px 32px -20px rgba(0,0,0,0.5); }
+:root[data-theme="ios"] .card-title { color: rgba(255,255,255,0.72); }
+:root[data-theme="ios"] .theme-switch button.active, :root[data-theme="ios"] .globe-btn.active,
+:root[data-theme="ios"] .tabbar button.active { color: #1c3a5e; }
 
 /* Live theme: background sky changes with the current weather (set via data-live);
    a scrim keeps light text readable, and #liveCanvas adds rain/snow/etc. */
@@ -125,32 +101,27 @@ body::before {
 :root[data-theme="live"] #liveCanvas { opacity: 1; }
 * { position: relative; z-index: 1; }
 
-/* node-network canvas — only visible in AI theme */
-#neuralCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity 0.6s ease; }
-:root[data-theme="ai"] #neuralCanvas { opacity: 1; }
-
 /* ── HEADER ── */
 .header { padding: 40px 20px 24px; max-width: 1200px; margin: 0 auto; }
+.title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 12px; }
 .header h1 { font-family: var(--display); font-style: italic; font-size: clamp(32px,7vw,52px); line-height: 1.05; }
-:root[data-theme="ai"] .header h1 { font-style: normal; letter-spacing: 0.02em; }
 .header h1 span { color: var(--accent); font-style: normal; }
-:root[data-theme="ai"] .header h1 span {
-  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  animation: aiSheen 6s linear infinite; background-size: 200% auto;
-}
-@keyframes aiSheen { to { background-position: 200% center; } }
+:root[data-theme="ios"] .header h1 span { color: #ffd60a; }
 .subtitle { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
 
 /* ── THEME SWITCH ── */
-.theme-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
-.theme-switch { display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; }
+/* Single row: in wider (non-cyber) fonts the controls used to wrap the World
+   button onto the line below — keep them on one line and scroll if it ever
+   overflows a very narrow screen. */
+.theme-bar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-top: 18px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.theme-bar::-webkit-scrollbar { display: none; }
+.theme-switch { flex-shrink: 0; display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px; }
 .theme-switch button {
   background: transparent; border: none; cursor: pointer;
   color: var(--muted); font-family: var(--font); font-size: 11px;
-  letter-spacing: 0.06em; text-transform: uppercase; padding: 8px 14px; border-radius: 99px;
-  transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+  letter-spacing: 0.04em; text-transform: uppercase; padding: 7px 11px; border-radius: 99px;
+  transition: all 0.2s; -webkit-tap-highlight-color: transparent; white-space: nowrap;
 }
 .theme-switch button:hover { color: var(--text); }
 .theme-switch button.active { background: var(--accent); color: var(--bg); font-weight: 500; }
@@ -158,7 +129,15 @@ body::before {
   font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--accent2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 99px;
 }
-:root[data-theme="ai"] .mode-tag { color: var(--accent); border-color: rgba(var(--accent-rgb),0.4); box-shadow: 0 0 14px -4px var(--accent); }
+.globe-btn {
+  flex-shrink: 0; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 7px 12px; border-radius: 99px; transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+}
+.globe-btn:hover { border-color: var(--accent); color: var(--accent); }
+.globe-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 500; }
 
 /* ── WRAPPER ── */
 .wrapper { max-width: 1200px; margin: 0 auto; padding: 0 20px 80px; }
@@ -170,7 +149,6 @@ body::before {
   backdrop-filter: blur(var(--card-blur)); -webkit-backdrop-filter: blur(var(--card-blur));
   transition: background 0.4s ease, border-color 0.4s ease;
 }
-:root[data-theme="ai"] .card { box-shadow: 0 0 0 1px rgba(var(--accent-rgb),0.08), 0 18px 50px -22px rgba(var(--accent-rgb),0.55); }
 :root[data-theme="live"] .card { box-shadow: 0 16px 40px -24px rgba(0,0,0,0.7); }
 .card-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; }
 .card-title.accent  { color: var(--accent); }
@@ -185,7 +163,7 @@ body::before {
 .search-input-wrap { flex: 1; position: relative; z-index: 1000; }
 .search-input-wrap input {
   width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-  padding: 13px 14px 13px 42px; color: var(--text);
+  padding: 13px 40px 13px 42px; color: var(--text);
   font-family: var(--font); font-size: 1rem; outline: none;
   transition: border-color 0.2s; -webkit-appearance: none;
   backdrop-filter: blur(var(--card-blur)); -webkit-backdrop-filter: blur(var(--card-blur));
@@ -193,17 +171,24 @@ body::before {
 .search-input-wrap input:focus { border-color: var(--accent); }
 .search-input-wrap input::placeholder { color: var(--muted); }
 .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 50%;
+  color: var(--muted); font-size: 12px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.search-clear:hover { color: var(--text); border-color: var(--accent); }
 
 /* AUTOCOMPLETE */
 .ac-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); z-index: 200; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
-/* The translucent Live/Neural themes make the search hard to read — make the
-   input and suggestions more solid for those two only. */
+/* Both themes are translucent — keep the suggestions list solid enough to read. */
 :root[data-theme="live"] .search-input-wrap input { background: rgba(14,20,34,0.86); }
-:root[data-theme="ai"]   .search-input-wrap input { background: rgba(4,16,18,0.88); }
+:root[data-theme="ios"]  .search-input-wrap input { background: rgba(255,255,255,0.16); }
+:root[data-theme="ios"]  .search-input-wrap input::placeholder { color: rgba(255,255,255,0.6); }
 :root[data-theme="live"] .ac-list { background: rgba(14,20,34,0.94); }
-:root[data-theme="ai"]   .ac-list { background: rgba(4,16,18,0.95); }
+:root[data-theme="ios"]  .ac-list { background: rgba(28,48,78,0.95); }
 :root[data-theme="live"] .ac-item:hover, :root[data-theme="live"] .ac-item.focused,
-:root[data-theme="ai"]   .ac-item:hover, :root[data-theme="ai"]   .ac-item.focused { background: rgba(255,255,255,0.10); }
+:root[data-theme="ios"]  .ac-item:hover, :root[data-theme="ios"]  .ac-item.focused { background: rgba(255,255,255,0.10); }
 .ac-item { padding: 11px 14px; cursor: pointer; font-size: 12px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
 .ac-item:last-child { border-bottom: none; }
 .ac-item .ac-city { font-weight: 500; color: var(--text); }
@@ -223,11 +208,19 @@ body::before {
 .today-main { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
 .today-icon { font-size: clamp(3rem,10vw,4.5rem); line-height: 1; }
 .today-temp { font-family: var(--display); font-style: italic; font-size: clamp(2.8rem,10vw,4.2rem); line-height: 1; color: var(--accent); }
-:root[data-theme="ai"] .today-temp { font-style: normal; }
+.today-feelslabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 2px; }
+.today-actual { font-size: 13px; color: var(--muted); margin-top: 5px; }
+.today-actual b { color: var(--text); font-weight: 600; }
 .today-desc { font-size: 12px; color: var(--muted); margin-top: 4px; text-transform: capitalize; }
 .today-range { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .today-range b { color: var(--text); font-weight: 500; }
 .today-local { font-size: 11px; color: var(--accent3); margin-top: 5px; letter-spacing: 0.04em; }
+.today-chart { margin-top: 12px; cursor: default; }
+/* Compact 2-column grid for the Today card's daily readouts (keeps the card
+   short; the feels-like headline + chart stay full-size). */
+.today-stats { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
+.today-stats .stat-row { padding: 5px 0; font-size: 11.5px; }
+.today-stats .stat-row:nth-last-child(-n+2) { border-bottom: none; }
 
 /* STAT ROWS */
 .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
@@ -244,17 +237,17 @@ body::before {
 .hourly-scroll::-webkit-scrollbar { height: 4px; }
 .hourly-scroll::-webkit-scrollbar-track { background: var(--surface); }
 .hourly-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-.hour-card { flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: center; min-width: 60px; transition: border-color 0.2s; }
-.hour-card.now { border-color: var(--accent); box-shadow: 0 0 14px -4px var(--accent); }
-.hour-card.sun { border-color: var(--accent2); background: rgba(255,255,255,0.02); justify-content: center; }
+.hour-card { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: center; min-width: 60px; transition: border-color 0.2s; }
+.hour-card.now { border: 2px solid var(--accent); padding: 9px 11px; background: rgba(var(--accent-rgb),0.10); box-shadow: 0 0 18px -4px var(--accent); }
+.hour-card.sun { border-color: var(--accent2); background: rgba(255,255,255,0.02); }
 .hour-card.sun .h-time { color: var(--accent2); }
-.hour-card.sun .h-icon { font-size: 1.6rem; margin: 7px 0; }
-.h-time { font-size: 10px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; }
+.hour-card.sun .h-icon { font-size: 1.55rem; }
+.h-time { font-size: 10px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em; min-height: 13px; }
 .h-moon { font-size: 9px; }
-.hour-card.now .h-time { color: var(--accent); }
-.h-icon { font-size: 1.4rem; margin-bottom: 5px; }
+.hour-card.now .h-time { color: var(--accent); font-weight: 700; }
+.h-icon { font-size: 1.4rem; height: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
 .h-temp { font-size: 12px; font-weight: 500; }
-.h-feels { font-size: 9px; color: var(--muted); margin-top: 1px; }
+.h-feels { font-size: 9px; color: var(--muted); margin-top: 1px; min-height: 11px; }
 .h-rain { font-size: 10px; color: var(--accent3); margin-top: 3px; min-height: 13px; }
 
 /* 7-DAY */
@@ -372,7 +365,6 @@ td.rain-c { color: var(--accent3); }
 .modal.show .modal-panel { transform: none; }
 .modal-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .modal-bar h3 { font-family: var(--display); font-style: italic; font-size: 20px; font-weight: 400; }
-:root[data-theme="ai"] .modal-bar h3 { font-style: normal; }
 .modal-close { background: var(--surface); border: 1px solid var(--border); color: var(--text); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 13px; }
 .modal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 8px; }
 .modal-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
@@ -440,7 +432,8 @@ td.rain-c { color: var(--accent3); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error-msg { background: rgba(255,107,107,0.07); border: 1px solid rgba(255,107,107,0.25); border-radius: 10px; padding: 12px 14px; color: var(--bear); font-size: 12px; margin-bottom: 16px; line-height: 1.6; }
 .error-msg code { display: block; margin-top: 5px; font-size: 11px; color: var(--muted); word-break: break-all; }
-.disclaimer { margin-top: 40px; text-align: center; font-size: 11px; color: var(--muted); opacity: 0.5; letter-spacing: 0.1em; }
+.footer-info { margin-top: 48px; text-align: center; font-size: 12px; color: var(--muted); letter-spacing: 0.06em; line-height: 1.6; }
+.disclaimer { margin-top: 10px; text-align: center; font-size: 11px; color: var(--muted); opacity: 0.5; letter-spacing: 0.1em; }
 .hidden { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
@@ -448,21 +441,19 @@ td.rain-c { color: var(--accent3); }
 </head>
 <body>
 
-<canvas id="neuralCanvas" aria-hidden="true"></canvas>
 <canvas id="liveCanvas" aria-hidden="true"></canvas>
 
 <div class="header">
-  <div class="eyebrow">● Live Forecast</div>
-  <h1>Sky<span>Cast</span></h1>
-  <div class="subtitle">Current conditions · 7-day outlook · Historical data · Open-Meteo model</div>
+  <div class="title-row">
+    <h1>Sky<span>Cast</span></h1>
+    <span class="mode-tag" id="modeTag">☀︎ Weather</span>
+  </div>
   <div class="theme-bar">
     <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
-      <button data-theme="current">Current</button>
-      <button data-theme="cyber">Cyber</button>
+      <button data-theme="ios">Weather</button>
       <button data-theme="live">Live</button>
-      <button data-theme="ai">Neural</button>
     </div>
-    <span class="mode-tag" id="modeTag">Classic</span>
+    <button class="globe-btn" id="globeBtn" type="button" title="World cities map" aria-label="World cities map" aria-pressed="false">🌍 <span>World</span></button>
   </div>
 </div>
 
@@ -477,15 +468,10 @@ td.rain-c { color: var(--accent3); }
         </svg>
       </span>
       <input type="text" id="cityInput" placeholder="Search any city…" autocomplete="off" inputmode="search">
+      <button type="button" class="search-clear hidden" id="searchClear" aria-label="Clear search" title="Clear">✕</button>
       <div class="ac-list hidden" id="acList"></div>
     </div>
     <button class="btn-search" id="searchBtn">Search</button>
-  </div>
-
-  <!-- TABS -->
-  <div class="tabbar" id="tabbar" role="tablist">
-    <button data-tab="forecast" class="active">☂ Forecast</button>
-    <button data-tab="europe">🗺 Cities</button>
   </div>
 
   <div id="forecastView">
@@ -512,17 +498,21 @@ td.rain-c { color: var(--accent3); }
       <div class="today-main">
         <div class="today-icon" id="todayIcon"></div>
         <div>
+          <div class="today-feelslabel">Feels like</div>
           <div class="today-temp" id="todayTemp"></div>
+          <div class="today-actual">Actual <b id="todayActual"></b></div>
           <div class="today-desc" id="todayDesc"></div>
           <div class="today-range">High <b id="todayHi"></b> · Low <b id="todayLo"></b></div>
           <div class="today-local" id="todayLocal"></div>
         </div>
       </div>
-      <div class="stat-row"><span class="label">Feels like</span><span class="value accent" id="sFeels"></span></div>
-      <div class="stat-row"><span class="label">Humidity</span><span class="value accent3" id="sHum"></span></div>
-      <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
-      <div class="stat-row hidden" id="rowRain"><span class="label">Rain Chance (now)</span><span class="value accent3" id="sRain"></span></div>
-      <div class="stat-row"><span class="label">UV Index</span><span class="value accent2" id="sUV"></span></div>
+      <div class="today-stats">
+        <div class="stat-row"><span class="label">Humidity</span><span class="value accent3" id="sHum"></span></div>
+        <div class="stat-row"><span class="label">Wind</span><span class="value" id="sWind"></span></div>
+        <div class="stat-row hidden" id="rowRain"><span class="label">Rain (now)</span><span class="value accent3" id="sRain"></span></div>
+        <div class="stat-row"><span class="label">UV Index</span><span class="value accent2" id="sUV"></span></div>
+      </div>
+      <div class="today-chart" id="todayChartHost" onclick="event.stopPropagation()"></div>
     </div>
 
     <!-- WHAT TO WEAR -->
@@ -600,15 +590,16 @@ td.rain-c { color: var(--accent3); }
 
   </div><!-- /forecastView -->
 
-  <!-- EUROPE LIVE WEATHER -->
+  <!-- WORLD LIVE WEATHER -->
   <div id="euView" class="hidden">
     <div class="card" style="padding:0;overflow:hidden;position:relative">
       <div id="euMapEl"></div>
       <div id="euOverlay" class="map-overlay">Loading cities…</div>
     </div>
-    <p class="map-status">Live conditions across ~100 European cities — zoom in for bigger icons &amp; names. Tap a pin for details.</p>
+    <p class="map-status">Live conditions across major cities worldwide (Europe in detail · capitals elsewhere) — zoom in for bigger icons &amp; names. Tap a pin for details.</p>
   </div>
 
+  <footer class="footer-info">Current conditions · 7-day outlook · Historical data · Open-Meteo model</footer>
   <div class="disclaimer">SkyCast · Open-Meteo · Map: OpenStreetMap/CARTO</div>
 </div>
 
@@ -710,21 +701,29 @@ const burnMinutes = uv => uv<1 ? null : Math.round(200/uv);   // ~fair skin, app
 // Smarter day icon: the API's daily code is the day's *worst* weather, so sunny
 // days with one shower looked gloomy. Look at the daylight hours and prefer sun
 // when the day is genuinely sunny (and not actually rainy).
-function dayIcon(hourly, dateStr, dailyCode){
-  if (!hourly || !hourly.time) return wc(dailyCode);
-  let clear=0, wet=0, total=0;
-  for (let i=0;i<hourly.time.length;i++){
-    if (!hourly.time[i].startsWith(dateStr)) continue;
-    if (hourly.is_day[i]!==1) continue;            // daylight only
-    total++;
-    const code=hourly.weather_code[i];
-    if (isWet(code)) wet++;
-    else if (code===0||code===1) clear++;
+function dayIcon(hourly, dateStr, dailyCode, dayProb){
+  let clear=0, rainy=0, total=0;
+  if (hourly && hourly.time){
+    for (let i=0;i<hourly.time.length;i++){
+      if (!hourly.time[i].startsWith(dateStr)) continue;
+      if (hourly.is_day[i]!==1) continue;          // daylight only
+      total++;
+      const code=hourly.weather_code[i];
+      const p=hourly.precipitation_probability ? hourly.precipitation_probability[i] : null;
+      if (p!=null && p>=40) rainy++;               // genuine rain chance this hour
+      else if (code===0||code===1) clear++;
+    }
   }
-  if (total===0) return wc(dailyCode);
-  if (wet<3 && clear>=5) return {i:'☀️', d:'Sunny'};
-  if (wet<3 && clear>=2) return {i:'🌤️', d:'Sun & clouds'};
-  return wc(dailyCode);                              // rainy / cloudy / fog → keep API icon
+  const wet = isWet(dailyCode);
+  // Put rain in the icon only when it's genuinely likely: several wet daylight
+  // hours (>=40% each) or a high daily max chance (>=50%). A low-chance day
+  // (e.g. a 14% Saturday) keeps its sun/cloud icon instead.
+  if (rainy>=3 || (wet && dayProb!=null && dayProb>=50))
+    return wet ? wc(dailyCode) : {i:'🌧️', d:'Showers likely'};
+  if (clear>=5) return {i:'☀️', d:'Sunny'};
+  if (clear>=2) return {i:'🌤️', d:'Sun & clouds'};
+  if (total===0) return wet ? {i:'☁️', d:'Cloudy'} : wc(dailyCode);
+  return {i:'☁️', d:'Cloudy'};
 }
 
 // ── MODAL / POPUP ────────────────────────────────────────────────
@@ -750,12 +749,24 @@ function barChart(labels, values, opts={}){
   values.forEach((v,i)=>{
     const h=(v/max)*(H-top-pad);
     const x=pad+i*bw, y=H-pad-h, cx=x+bw/2;
-    bars+=`<rect x="${(x+bw*0.16).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.68).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" fill="var(--accent3)"><title>${labels[i]}: ${v}${opts.unit||''}</title></rect>`;
-    if (v>0) vals+=`<text x="${cx.toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="var(--text)">${Math.round(v)}</text>`;
+    // Below the dashBelow threshold (e.g. <50% rain): draw a dashed, lightly
+    // filled outline so it reads as "not significant" — matching the hourly
+    // strip, which only flags rain above the same cutoff.
+    const low = opts.dashBelow!=null && v < opts.dashBelow;
+    const fill = low ? `fill="var(--accent3)" fill-opacity="0.16" stroke="var(--accent3)" stroke-width="1.1" stroke-dasharray="3 2"` : `fill="var(--accent3)"`;
+    bars+=`<rect x="${(x+bw*0.16).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.68).toFixed(1)}" height="${Math.max(h,0).toFixed(1)}" rx="2" ${fill}><title>${labels[i]}: ${v}${opts.unit||''}</title></rect>`;
+    if (v>0) vals+=`<text x="${cx.toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${low?'var(--muted)':'var(--text)'}">${Math.round(v)}</text>`;
     if (i%2===0) axis+=`<text x="${cx.toFixed(1)}" y="${H-7}" text-anchor="middle" font-size="9" fill="var(--muted)">${labels[i]}</text>`;
   });
+  // red vertical marker at the current hour, so it's obvious where "now" is
+  let nowLine='';
+  if (opts.now!=null && opts.now>=0 && opts.now<labels.length){
+    const cx=pad+(opts.now+0.5)*bw;
+    nowLine=`<line x1="${cx.toFixed(1)}" y1="${top-7}" x2="${cx.toFixed(1)}" y2="${H-pad}" stroke="var(--bear)" stroke-width="1.5" stroke-dasharray="4 3"/>`
+          +`<text x="${cx.toFixed(1)}" y="${top-10}" text-anchor="middle" font-size="8" font-weight="700" fill="var(--bear)">NOW</text>`;
+  }
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="min-width:${W}px">`
-    + `<text x="4" y="12" font-size="9" fill="var(--muted)">${max}${opts.unit||''}</text>${bars}${vals}${axis}</svg>`;
+    + `<text x="4" y="12" font-size="9" fill="var(--muted)">${max}${opts.unit||''}</text>${bars}${vals}${axis}${nowLine}</svg>`;
 }
 
 // Interactive per-day chart (returns a DOM element):
@@ -798,13 +809,25 @@ function dayChart(hourly, dateStr){
   const hasRain=prob.some(p=>p>0); let rainBars='',rainRef='';
   if(hasRain){
     const midY=(plotTop+plotBot)/2, bw=(n>1?x(1)-x(0):20)*0.55;
-    prob.forEach((p,i)=>{ if(p>0){ const h=(p/100)*(plotBot-midY); rainBars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(plotBot-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1" fill="var(--accent3)" opacity="0.32"/>`; } });
+    prob.forEach((p,i)=>{ if(p>0){ const h=(p/100)*(plotBot-midY);
+      // Below 50%: dashed, lightly-filled outline (matches the hourly strip &
+      // Rain chart cutoff). At/above 50%: solid bar.
+      const style = p<50 ? `fill="var(--accent3)" fill-opacity="0.12" stroke="var(--accent3)" stroke-width="0.9" stroke-dasharray="3 2"` : `fill="var(--accent3)" opacity="0.42"`;
+      rainBars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(plotBot-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1" ${style}/>`; } });
     rainRef=`<line x1="${L}" y1="${midY.toFixed(1)}" x2="${W-R}" y2="${midY.toFixed(1)}" stroke="var(--accent3)" stroke-width="0.7" stroke-dasharray="2 3" opacity="0.7"/><text x="${W-R}" y="${(midY-3).toFixed(1)}" text-anchor="end" font-size="8" fill="var(--accent3)">100% rain</text>`;
   }
   // top icons + bottom hour labels every 3h
   let icons='',hoursL='';
   for(let i=0;i<n;i+=3){ icons+=`<text x="${x(i).toFixed(1)}" y="16" text-anchor="middle" font-size="14">${wc(code[i],isday[i]).i}</text>`;
     hoursL+=`<text x="${x(i).toFixed(1)}" y="${H-9}" text-anchor="middle" font-size="9" fill="var(--muted)">${String(hrs[i]).padStart(2,'0')}</text>`; }
+  // red marker at the current hour (only when this chart is showing today)
+  let nowMark='';
+  const nowI = (typeof WX!=='undefined' && WX) ? idx.indexOf(nowHourIdx(WX)) : -1;
+  if (nowI>=0){
+    const nx=x(nowI);
+    nowMark=`<line x1="${nx.toFixed(1)}" y1="${plotTop-8}" x2="${nx.toFixed(1)}" y2="${plotBot}" stroke="var(--bear)" stroke-width="1.5" stroke-dasharray="4 3"/>`
+          +`<text x="${nx.toFixed(1)}" y="${plotTop-11}" text-anchor="middle" font-size="8" font-weight="700" fill="var(--bear)">NOW</text>`;
+  }
   const legend=`<div class="dd-legend"><span><i style="background:var(--accent)"></i>Temp</span>${haveFeels?'<span><i style="background:var(--accent2)"></i>Feels like</span>':''}${hasRain?'<span><i style="background:var(--accent3)"></i>Rain %</span>':''}<span>drag for any hour ›</span></div>`;
   wrap.innerHTML=`<div class="dd-tip"></div><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`
     +`<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity="0.30"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>`
@@ -813,6 +836,7 @@ function dayChart(hourly, dateStr){
     +rainBars+rainRef
     +`<path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`
     +(haveFeels?`<path d="${fline}" fill="none" stroke="var(--accent2)" stroke-width="1.4" stroke-dasharray="4 3"/>`:'')
+    +nowMark
     +`<line class="cursor-line" x1="0" y1="${plotTop}" x2="0" y2="${plotBot}"/><circle class="cursor-dot" r="3.5"/>${haveFeels?'<circle class="cursor-dot2" r="3"/>':''}`
     +icons+hoursL+`</svg>`+legend;
   // ── interactivity ──
@@ -838,7 +862,7 @@ function dayChart(hourly, dateStr){
     const r=svg.getBoundingClientRect();
     const vx=(e.clientX-r.left)/r.width*W;
     let i=Math.round((vx-L)/(W-L-R)*(n-1));
-    select(Math.round(i/2)*2);                 // snap to 2-hour steps
+    select(i);                                 // snap to the nearest hour
   }
   // the readout only appears while actively pressing/dragging, then disappears
   function showFX(v){ tip.style.display=v?'':'none'; cl.style.display=v?'':'none'; cd.style.display=v?'':'none'; if(cd2&&!v) cd2.style.display='none'; }
@@ -903,22 +927,40 @@ function graphWindow(H){
   const idx=[]; for(let i=start;i<Math.min(start+35,H.time.length);i++) idx.push(i);
   return idx;
 }
-// after opening, scroll the chart so the 08:00–20:00 range is in view first
-function scrollGraphTo08(n){
+// The location's current hour index in the hourly arrays. Derived from the
+// browser clock + the API's UTC offset, because the payload's current.time has
+// 15-min granularity and can lag (e.g. at 04:06 it may still say 03:45, which
+// made the "Now" card point at the previous hour).
+function nowHourIdx(d){
+  const H=d.hourly;
+  if (d.utc_offset_seconds!=null){
+    const key=new Date(Date.now()+d.utc_offset_seconds*1000).toISOString().slice(0,13);
+    const i=H.time.findIndex(t=>t.slice(0,13)===key);
+    if (i>=0) return i;
+  }
+  const ct=(d.current&&d.current.time)||'';
+  let i=H.time.findIndex(t=>t.slice(0,13)===ct.slice(0,13));
+  if (i<0) i=H.time.findIndex(t=>ct&&t>=ct);
+  return i<0?0:i;
+}
+// after opening, center the scrollable chart on the current hour (red line)
+function scrollGraphToNow(n, nowIdx){
   requestAnimationFrame(()=>{ const el=document.querySelector('#modalBody .chart-scroll'); if(!el) return;
-    const W=Math.max(n*30,320), bw=(W-48)/n; el.scrollLeft=Math.max(0, 24+8*bw-10); });
+    const W=Math.max(n*30,320), bw=(W-48)/n;
+    el.scrollLeft=Math.max(0, 24+(nowIdx+0.5)*bw - el.clientWidth/2); });
 }
 function openRainGraph(){
   if (!WX) return;
   const H=WX.hourly, idx=graphWindow(H);
   const labels=idx.map(i=>H.time[i].slice(11,16));
   const probs=idx.map(i=>H.precipitation_probability[i]??0);
+  const nowI=idx.indexOf(nowHourIdx(WX));
   const totalRain=idx.reduce((s,i)=>s+(+(H.precipitation[i]??0)),0).toFixed(1);
   let html=`<p class="modal-note">Chance of rain per hour · today into tomorrow morning · expected total <b>${totalRain} mm</b></p>`;
-  html+='<div class="chart-scroll">'+barChart(labels, probs, {unit:'%', max:100})+'</div>';
-  html+='<p class="pollen-disc">Starts at the daytime hours — scroll right for the evening, night and next morning.</p>';
+  html+='<div class="chart-scroll">'+barChart(labels, probs, {unit:'%', max:100, dashBelow:50, now:nowI})+'</div>';
+  html+='<p class="pollen-disc">The red line marks the current hour. Dashed bars are below 50% — the same cutoff the hourly strip uses to flag rain.</p>';
   openModal('Rain — hour by hour', html);
-  scrollGraphTo08(labels.length);
+  scrollGraphToNow(labels.length, Math.max(nowI,0));
 }
 
 // Hourly UV curve (today into next morning) + peak and approximate burn time.
@@ -931,10 +973,11 @@ function openUvGraph(){
   const cat=uvCategory(peak), bm=burnMinutes(peak);
   let html=`<p class="modal-note">Peak UV <b>${peak.toFixed(1)}</b> <span class="pollen-pill ${cat.cls}">${cat.label}</span> around <b>${peakAt||'—'}</b></p>`;
   if (bm) html+=`<p class="modal-note">At peak, fair skin can start to burn in about <b>${bm} min</b> without protection.</p>`;
-  html+='<div class="chart-scroll">'+barChart(labels, uvs, {unit:'', max:Math.max(11,peak)})+'</div>';
-  html+='<p class="pollen-disc">Burn time is approximate (skin type II). Darker skin tones take ~2–4× longer.</p>';
+  const nowI=idx.indexOf(nowHourIdx(WX));
+  html+='<div class="chart-scroll">'+barChart(labels, uvs, {unit:'', max:Math.max(11,peak), now:nowI})+'</div>';
+  html+='<p class="pollen-disc">The red line marks the current hour. Burn time is approximate (skin type II). Darker skin tones take ~2–4× longer.</p>';
   openModal('UV index — hour by hour', html);
-  scrollGraphTo08(labels.length);
+  scrollGraphToNow(labels.length, Math.max(nowI,0));
 }
 
 // A forecast day's interactive chart + details, shown in a centred popup.
@@ -944,7 +987,7 @@ function openDayModal(i){
   const date=new Date(dateStr+'T12:00:00');
   const name=i===0?'Today':date.toLocaleDateString('en-US',{weekday:'long'});
   const dlbl=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-  const ic=dayIcon(WX.hourly, dateStr, days.weather_code[i]);
+  const ic=dayIcon(WX.hourly, dateStr, days.weather_code[i], days.precipitation_probability_max[i]);
   const hi=days.temperature_2m_max[i], lo=days.temperature_2m_min[i];
   const rainP=days.precipitation_probability_max[i], wet=isWet(days.weather_code[i]);
   const grid=`<div class="dd-subtitle">Details</div><div class="dd-grid">
@@ -1001,90 +1044,23 @@ function computeBestDay(days){
 const acList    = document.getElementById('acList');
 
 // ── THEME SWITCHING ──────────────────────────────────────────────
-const MODE_LABELS = { current:'Classic', cyber:'▣ HUD Online', live:'◉ Live Weather', ai:'⚡ Neural Entity Online' };
+const MODE_LABELS = { ios:'☀︎ Weather', live:'◉ Live Weather' };
 function setTheme(name){
-  if(!MODE_LABELS[name]) name='current';
+  if(!MODE_LABELS[name]) name='ios';
   document.documentElement.setAttribute('data-theme', name);
   try { localStorage.setItem('skycast-theme', name); } catch(e){}
   document.querySelectorAll('#themeSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.theme===name));
   document.getElementById('modeTag').textContent = MODE_LABELS[name];
-  name==='ai' ? startNeural() : stopNeural();
   name==='live' ? startLive() : stopLive();
+  syncSky();   // both themes tint the sky from the current hour's weather
+}
+// Set data-live (the sky tint) from the current hour — used by BOTH themes;
+// the live theme additionally animates rain/snow/etc. on its canvas.
+function syncSky(){
+  if (WX && WX.hourly){ const i=nowHourIdx(WX); setLiveMode(liveModeFor(WX.hourly.weather_code[i], WX.hourly.is_day[i])); }
+  else setLiveMode('clear-day');
 }
 document.querySelectorAll('#themeSwitch button').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
-
-// ── NEURAL CANVAS — synaptic network (AI theme) ──────────────────
-// Neurons drift slowly; nearby ones link with dendrites; signals (pulses)
-// travel along links, make the target neuron "fire" (flare) and sometimes
-// chain onward — a living neural net rather than flat dots.
-const NEURAL_D=150;
-let neuralRAF=null, nodes=[], pulses=[], canvas, ctx;
-function initNeural(){
-  canvas = document.getElementById('neuralCanvas');
-  ctx = canvas.getContext('2d');
-  resizeNeural();
-  window.addEventListener('resize', ()=>{ if(neuralRAF){ resizeNeural(); buildNodes(); } });
-}
-function resizeNeural(){ const dpr=Math.min(devicePixelRatio||1,2); canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); }
-function buildNodes(){
-  const n = Math.min(64, Math.round(innerWidth*innerHeight/24000));
-  nodes = Array.from({length:n},()=>({
-    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
-    vx:(Math.random()-0.5)*0.28, vy:(Math.random()-0.5)*0.28,
-    glow:0, ph:Math.random()*Math.PI*2
-  }));
-  pulses=[];
-}
-function spawnPulse(a, adj){
-  if (pulses.length>=30 || !adj[a] || !adj[a].length) return;
-  const b=adj[a][(Math.random()*adj[a].length)|0];
-  pulses.push({a, b, t:0, sp:0.012+Math.random()*0.022});
-}
-function drawNeural(){
-  const W=innerWidth, H=innerHeight;
-  ctx.clearRect(0,0,W,H);
-  const adj=nodes.map(()=>[]);
-  for (const p of nodes){
-    p.x+=p.vx; p.y+=p.vy; p.ph+=0.02; p.glow*=0.93;
-    if (p.x<0||p.x>W) p.vx*=-1;
-    if (p.y<0||p.y>H) p.vy*=-1;
-  }
-  // dendrites
-  ctx.lineWidth=1;
-  for (let i=0;i<nodes.length;i++){
-    for (let j=i+1;j<nodes.length;j++){
-      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, dist=Math.hypot(dx,dy);
-      if (dist<NEURAL_D){
-        adj[i].push(j); adj[j].push(i);
-        ctx.strokeStyle=`rgba(22,239,198,${0.10*(1-dist/NEURAL_D)})`;
-        ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
-      }
-    }
-  }
-  // fire a new signal occasionally
-  if (Math.random()<0.22){ spawnPulse((Math.random()*nodes.length)|0, adj); }
-  // signals travelling along dendrites
-  ctx.shadowColor='rgba(22,239,198,0.9)'; ctx.shadowBlur=10;
-  for (let k=pulses.length-1;k>=0;k--){
-    const pu=pulses[k], a=nodes[pu.a], b=nodes[pu.b];
-    pu.t+=pu.sp;
-    const x=a.x+(b.x-a.x)*pu.t, y=a.y+(b.y-a.y)*pu.t;
-    ctx.fillStyle='rgba(180,255,240,0.95)';
-    ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
-    if (pu.t>=1){ b.glow=1; pulses.splice(k,1); if (Math.random()<0.55) spawnPulse(pu.b, adj); }
-  }
-  // neurons (soma) with bloom that flares when fired
-  for (const p of nodes){
-    const r=1.5+p.glow*2.4;
-    ctx.shadowBlur=6+p.glow*16;
-    ctx.fillStyle=`rgba(${94+p.glow*120},${234},${212},${0.5+0.25*Math.sin(p.ph)+p.glow*0.45})`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
-  }
-  ctx.shadowBlur=0;
-  neuralRAF=requestAnimationFrame(drawNeural);
-}
-function startNeural(){ if(neuralRAF) return; if(!canvas) initNeural(); resizeNeural(); buildNodes(); neuralRAF=requestAnimationFrame(drawNeural); }
-function stopNeural(){ if(neuralRAF){ cancelAnimationFrame(neuralRAF); neuralRAF=null; ctx&&ctx.clearRect(0,0,innerWidth,innerHeight); } }
 
 // ── LIVE WEATHER CANVAS — background reflects current conditions ──
 let liveRAF=null, lcanvas, lctx, lparts=[], liveMode='clear-day', liveFlash=0, liveT=0;
@@ -1138,17 +1114,21 @@ function drawLive(){
 }
 function setLiveMode(mode){ liveMode=mode; document.documentElement.setAttribute('data-live',mode); if(liveRAF) buildLive(); }
 function startLive(){ if(liveRAF) return; if(!lcanvas) initLive(); resizeLive();
-  if (WX && WX.current) setLiveMode(liveModeFor(WX.current.weather_code, WX.current.is_day)); else setLiveMode('clear-day');
+  // Sky tint from the current *hour's* condition (same as the hourly "Now" card).
+  syncSky();
   buildLive(); liveRAF=requestAnimationFrame(drawLive); }
 function stopLive(){ if(liveRAF){ cancelAnimationFrame(liveRAF); liveRAF=null; lctx&&lctx.clearRect(0,0,innerWidth,innerHeight); } }
 
 // ── TABS ─────────────────────────────────────────────────────────
-document.querySelectorAll('#tabbar button').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-function switchTab(t){
-  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
-  document.getElementById('forecastView').classList.toggle('hidden', t!=='forecast');
-  document.getElementById('euView').classList.toggle('hidden', t!=='europe');
-  if (t==='europe') openEuropeMap();
+// World cities map: toggled by the 🌍 button in the controls bar.
+const globeBtn=document.getElementById('globeBtn');
+globeBtn.addEventListener('click', ()=> showCities(document.getElementById('euView').classList.contains('hidden')));
+function showCities(show){
+  document.getElementById('forecastView').classList.toggle('hidden', show);
+  document.getElementById('euView').classList.toggle('hidden', !show);
+  globeBtn.classList.toggle('active', show);
+  globeBtn.setAttribute('aria-pressed', show?'true':'false');
+  if (show) openEuropeMap();
 }
 function setOverlay(id, text, show){ const e=document.getElementById(id); if(!e) return; e.textContent=text; e.classList.toggle('hidden', show===false); }
 const CARTO='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
@@ -1185,11 +1165,43 @@ const EU_CITIES=[
   ['Kyiv',50.45,30.52],['Lviv',49.84,24.03],['Odesa',46.48,30.72],
   ['Istanbul',41.01,28.98],['Ankara',39.93,32.86],['Izmir',38.42,27.14]
 ];
+// Outside Europe: capitals (plus a few globally iconic cities) so the map is
+// genuinely worldwide without thousands of pins.
+const WORLD_CITIES=[
+  // Asia & Middle East
+  ['Tokyo',35.68,139.69],['Beijing',39.90,116.40],['New Delhi',28.61,77.21],['Bangkok',13.76,100.50],
+  ['Jakarta',-6.21,106.85],['Seoul',37.57,126.98],['Manila',14.60,120.98],['Hanoi',21.03,105.85],
+  ['Kuala Lumpur',3.14,101.69],['Singapore',1.35,103.82],['Islamabad',33.69,73.06],['Dhaka',23.81,90.41],
+  ['Riyadh',24.71,46.68],['Tehran',35.69,51.39],['Baghdad',33.31,44.36],['Kabul',34.53,69.17],
+  ['Tashkent',41.30,69.24],['Astana',51.17,71.43],['Colombo',6.93,79.85],['Kathmandu',27.72,85.32],
+  ['Naypyidaw',19.76,96.08],['Phnom Penh',11.56,104.92],['Vientiane',17.97,102.63],['Ulaanbaatar',47.89,106.91],
+  ['Doha',25.29,51.53],['Abu Dhabi',24.45,54.38],['Kuwait City',29.38,47.99],['Muscat',23.59,58.41],
+  ['Amman',31.95,35.93],['Beirut',33.89,35.50],['Jerusalem',31.78,35.22],['Yerevan',40.18,44.51],
+  ['Tbilisi',41.72,44.79],['Baku',40.41,49.87],
+  // Africa
+  ['Cairo',30.04,31.24],['Rabat',34.02,-6.83],['Algiers',36.75,3.06],['Tunis',36.81,10.18],
+  ['Tripoli',32.89,13.19],['Abuja',9.06,7.50],['Lagos',6.52,3.38],['Accra',5.60,-0.19],
+  ['Nairobi',-1.29,36.82],['Addis Ababa',9.03,38.74],['Khartoum',15.50,32.56],['Dakar',14.72,-17.47],
+  ['Kinshasa',-4.32,15.31],['Luanda',-8.84,13.23],['Pretoria',-25.75,28.19],['Cape Town',-33.92,18.42],
+  ['Harare',-17.83,31.05],['Lusaka',-15.39,28.32],['Kampala',0.35,32.58],['Dar es Salaam',-6.79,39.21],
+  ['Maputo',-25.97,32.57],['Windhoek',-22.56,17.08],['Antananarivo',-18.88,47.51],['Bamako',12.64,-8.00],
+  // Americas
+  ['Washington',38.91,-77.04],['New York',40.71,-74.01],['Los Angeles',34.05,-118.24],['Chicago',41.88,-87.63],
+  ['Ottawa',45.42,-75.70],['Toronto',43.65,-79.38],['Mexico City',19.43,-99.13],['Guatemala City',14.63,-90.51],
+  ['Havana',23.11,-82.37],['Santo Domingo',18.49,-69.93],['San José',9.93,-84.08],['Panama City',8.98,-79.52],
+  ['Bogotá',4.71,-74.07],['Caracas',10.49,-66.88],['Quito',-0.18,-78.47],['Lima',-12.05,-77.04],
+  ['La Paz',-16.50,-68.15],['Santiago',-33.45,-70.67],['Buenos Aires',-34.60,-58.38],['Montevideo',-34.90,-56.16],
+  ['Asunción',-25.28,-57.63],['Brasília',-15.79,-47.88],['Rio de Janeiro',-22.91,-43.17],['São Paulo',-23.55,-46.63],
+  // Oceania
+  ['Canberra',-35.28,149.13],['Sydney',-33.87,151.21],['Melbourne',-37.81,144.96],['Wellington',-41.29,174.78],
+  ['Auckland',-36.85,174.76]
+];
+const ALL_CITIES = EU_CITIES.concat(WORLD_CITIES);
 let euMap=null, euLayer=null, euMoveTimer=null, euReqId=0;
 function openEuropeMap(){
   if (!window.L){ setOverlay('euOverlay','Map library failed to load'); return; }
   if (!euMap){
-    euMap=L.map('euMapEl',{zoomControl:true}).setView([52,12], 4);
+    euMap=L.map('euMapEl',{zoomControl:true, worldCopyJump:true, minZoom:2}).setView([25,10], 2);
     L.tileLayer(CARTO, {maxZoom:11, attribution:'© OpenStreetMap, © CARTO'}).addTo(euMap);
     euMap.on('zoomend', updateEuZoom);
     loadEurope();
@@ -1203,7 +1215,7 @@ function updateEuZoom(){
 // Static list of ~100 main European cities — loaded once (fast).
 async function loadEurope(){
   setOverlay('euOverlay','Loading cities…');
-  const cities=EU_CITIES.map(c=>({name:c[0], lat:c[1], lon:c[2]}));
+  const cities=ALL_CITIES.map(c=>({name:c[0], lat:c[1], lon:c[2]}));
   let wx;
   try { wx=await fetchCityWeather(cities); } catch(e){ setOverlay('euOverlay','Could not load city weather'); return; }
   if (euLayer) euLayer.remove();
@@ -1294,25 +1306,40 @@ function renderWear(d){
 // ── AUTOCOMPLETE ─────────────────────────────────────────────────
 // First edit after a city was selected: wipe the old name regardless of caret
 // position (reliable on iOS) and keep only what was just typed/pasted.
+const searchClear = document.getElementById('searchClear');
+function syncClearBtn(){ searchClear.classList.toggle('hidden', !cityInput.value); }
+// Focusing a box that already holds a searched city selects the whole text, so
+// the user can SEE it's highlighted and that typing will replace it (instead of
+// it silently vanishing on the first keystroke).
+cityInput.addEventListener('focus', () => { if (committedCity && cityInput.value) cityInput.select(); });
+// If they type into a committed city without the text being fully selected
+// (e.g. they moved the cursor), still start a fresh search from that keystroke.
 cityInput.addEventListener('beforeinput', e => {
   if (!committedCity) return;
-  committedCity = false; committedLabel = '';
-  if (e.inputType && e.inputType.indexOf('insert') === 0 && e.data != null) {
+  const allSelected = cityInput.selectionStart===0 && cityInput.selectionEnd===cityInput.value.length;
+  if (allSelected) return;                       // native replace already handles it
+  if (e.inputType && e.inputType.indexOf('insert')===0 && e.data!=null){
     e.preventDefault();
     cityInput.value = e.data;
     cityInput.dispatchEvent(new Event('input'));
-  } else {
-    cityInput.value = '';   // backspace etc. on a committed city → start empty
   }
 });
+// Typing over the committed (often selected) city starts a fresh search.
 cityInput.addEventListener('input', () => {
+  committedCity = false; committedLabel = '';
   clearTimeout(acTimer);
   acFocused = -1;
+  syncClearBtn();
   const q = cityInput.value.trim();
   if (q.length < 2) { hideAc(); return; }
   acList.innerHTML = '<div class="ac-loading">Searching…</div>';
   acList.classList.remove('hidden');
   acTimer = setTimeout(() => doAcSearch(q), 380);
+});
+// One-tap clear → empty box, focused and ready for a new city.
+searchClear.addEventListener('click', () => {
+  cityInput.value = ''; committedCity = false; committedLabel = '';
+  hideAc(); syncClearBtn(); cityInput.focus();
 });
 cityInput.addEventListener('keydown', e => {
   const items = acList.querySelectorAll('.ac-item');
@@ -1363,6 +1390,7 @@ function pickResult(r) {
   const label = r.name + (region ? ', ' + region : '');
   cityInput.value = label;
   committedCity = true; committedLabel = label;   // next typed letter starts a fresh search
+  syncClearBtn();
   hideAc();
   loadWeather(r.lat, r.lon, label);
 }
@@ -1423,6 +1451,7 @@ async function reverseGeocode(lat, lon) {
   return '';
 }
 async function loadWeather(lat, lon, label) {
+  showCities(false);          // a search always returns to the forecast view
   setLoading(true);
   currentLat=lat; currentLon=lon;
   const url = 'https://api.open-meteo.com/v1/forecast'
@@ -1471,32 +1500,35 @@ function renderWeather(d) {
 
   // Locate the location's *current* hour in the hourly arrays (timezone-safe)
   const times=d.hourly.time;
-  const nowKey = (cur.time || '').slice(0,13);                 // e.g. "2026-06-05T14"
-  let start = times.findIndex(t => t.slice(0,13) === nowKey);
-  if (start < 0) start = times.findIndex(t => cur.time && t >= cur.time);
-  if (start < 0) start = 0;
+  const start = nowHourIdx(d);
   // Current-hour precipitation probability — matches phone-style "rain now"
   const nowProb = d.hourly.precipitation_probability[start];
 
   // Hero icon: use the same whole-day summary as today's 16-day forecast row
   // (dayIcon looks at all daylight hours) so the hero and the forecast agree —
   // e.g. a day with rain shows rain here too, not just the current cloud.
-  const heroIc = dayIcon(d.hourly, d.daily.time[0], d.daily.weather_code[0]);
+  const heroIc = dayIcon(d.hourly, d.daily.time[0], d.daily.weather_code[0], d.daily.precipitation_probability_max[0]);
   document.getElementById('todayIcon').textContent = heroIc.i;
-  document.getElementById('todayTemp').textContent = T(cur.temperature_2m);
+  // Headline = feels-like (what it's like outside); actual temp shown below it.
+  document.getElementById('todayTemp').textContent   = F(cur.apparent_temperature);
+  document.getElementById('todayActual').textContent = T(cur.temperature_2m);
   document.getElementById('todayDesc').textContent = heroIc.d;
   document.getElementById('todayHi').textContent   = T(day0.hi);
   document.getElementById('todayLo').textContent   = T(day0.lo);
-  document.getElementById('sFeels').textContent = F(cur.apparent_temperature);
   document.getElementById('sHum').textContent  = cur.relative_humidity_2m + '%';
   document.getElementById('sWind').textContent = W(cur.wind_speed_10m) + (windDir(cur.wind_direction_10m) ? ' ' + windDir(cur.wind_direction_10m) : '');
   document.getElementById('sUV').textContent   = day0.uv ?? '—';
 
-  // Local time at the searched location (fixes timezone misalignment)
-  if (cur.time) {
-    const localNow = new Date(cur.time);
+  // Local time at the searched location — from our clock + the API's UTC
+  // offset (the payload's current.time has 15-min granularity and lags)
+  if (d.utc_offset_seconds!=null || cur.time) {
+    const localNow = d.utc_offset_seconds!=null
+      ? new Date(Date.now()+d.utc_offset_seconds*1000)
+      : new Date(cur.time);
+    const opt={hour:'2-digit',minute:'2-digit',hour12:true};
+    if (d.utc_offset_seconds!=null) opt.timeZone='UTC';   // epoch already shifted
     document.getElementById('todayLocal').textContent =
-      'Local time · ' + localNow.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+      'Local time · ' + localNow.toLocaleTimeString('en-US',opt);
   } else {
     document.getElementById('todayLocal').textContent = '';
   }
@@ -1510,11 +1542,18 @@ function renderWeather(d) {
     rowRain.classList.add('hidden');
   }
 
+  // Today's interactive chart, embedded right in the card (same graph as the
+  // day popups below, immediately available without tapping).
+  const tch=document.getElementById('todayChartHost');
+  tch.innerHTML=''; tch.appendChild(dayChart(d.hourly, d.daily.time[0]));
+
   // Stargazing tonight (clouds + moon) + what-to-wear advice
   renderStargazing(d, start);
   renderWear(d);
-  // If the Live theme is active, sync its background to the new weather
-  if (document.documentElement.getAttribute('data-theme')==='live') setLiveMode(liveModeFor(cur.weather_code, cur.is_day));
+  // Sync the sky tint (both themes) to the *current hour's* condition — the
+  // same code the hourly "Now" card shows — so a 🌦️ now means a rain sky,
+  // never a sunny one from a stale/instant current code.
+  setLiveMode(liveModeFor(d.hourly.weather_code[start], d.hourly.is_day[start]));
 
   // HOURLY — next 24h starting from the location's current hour (not the browser's)
   const scroll=document.getElementById('hourlyScroll'); scroll.innerHTML='';
@@ -1530,13 +1569,16 @@ function renderWeather(d) {
     const h = new Date(times[i]).getHours();
     const prob = d.hourly.precipitation_probability[i];
     const code = d.hourly.weather_code[i];
+    // Show the rain % when it's actually precipitating OR the chance is high
+    // (>50%) — these forecasts skew high, so a >50% cutoff keeps it meaningful.
+    const showRain = isWet(code) || (prob!=null && prob>50);
     const night = d.hourly.is_day[i]===0;   // after sunset / before sunrise
     const el=document.createElement('div'); el.className='hour-card'+(isNow?' now':'');
     el.innerHTML=`<div class="h-time">${isNow?'Now':String(h).padStart(2,'0')+':00'}${night?' <span class="h-moon">🌙</span>':''}</div>
       <div class="h-icon">${wc(code, d.hourly.is_day[i]).i}</div>
       <div class="h-temp">${T(d.hourly.temperature_2m[i])}</div>
       <div class="h-feels">${d.hourly.apparent_temperature?'≈'+Math.round(d.hourly.apparent_temperature[i])+'°':''}</div>
-      <div class="h-rain">${isWet(code)?'🌧️'+prob+'%':''}</div>`;
+      <div class="h-rain">${showRain?'🌧️'+(prob??0)+'%':''}</div>`;
     scroll.appendChild(el);
     // insert a sunrise/sunset card if one falls within this hour
     const nxt=times[i+1];
@@ -1583,7 +1625,7 @@ function renderWeather(d) {
     const barL=((lo-gMin)/range*100).toFixed(1), barW=((hi-lo)/range*100).toFixed(1);
     const rainP=days.precipitation_probability_max[i];
     const wet=isWet(days.weather_code[i]);
-    const ic=dayIcon(d.hourly, dateStr, days.weather_code[i]);   // smarter sun-aware icon
+    const ic=dayIcon(d.hourly, dateStr, days.weather_code[i], rainP);   // smarter sun/rain-aware icon
     const row=document.createElement('div'); row.className='week-row'+(i===bestIdx?' best':'')+(i>=7?' far':'');
     row.innerHTML=`<div class="wr-day">${i===bestIdx?'⭐ ':''}${name}<small>${dlbl}</small></div>
       <div class="wr-icon">${ic.i}</div>
@@ -1820,6 +1862,7 @@ function showError(msg,hint) {
 function gotoCity(lat, lon, label) {
   cityInput.value = label || '';
   committedCity = !!label; committedLabel = label || '';
+  syncClearBtn();
   loadWeather(lat, lon, label || 'Your location');
 }
 function loadLast() {
@@ -1838,8 +1881,19 @@ function autoLocate() {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
-setTheme(document.documentElement.getAttribute('data-theme') || 'current');
+setTheme(document.documentElement.getAttribute('data-theme') || 'ios');
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
+
+// Keep "Now" honest: when the location's clock rolls into the next hour,
+// re-render from the cached payload so the Now card (and live background)
+// advance without needing a reload or a new search.
+let _lastNowIdx=null;
+setInterval(()=>{
+  if (!WX) { _lastNowIdx=null; return; }
+  const i=nowHourIdx(WX);
+  if (_lastNowIdx!==null && i!==_lastNowIdx) renderWeather(WX);
+  _lastNowIdx=i;
+}, 60000);
 autoLocate();   // on open: detect location, else fall back to last searched city
 </script>
 </body>
