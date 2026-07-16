@@ -97,20 +97,15 @@ body::before {
 * { position: relative; z-index: 1; }
 
 /* ── HEADER ── */
-.header { padding: 40px 20px 24px; max-width: 1200px; margin: 0 auto; }
-.title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.header { padding: 18px 20px 8px; max-width: 1200px; margin: 0 auto; }
+.title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.title-row .globe-btn { margin-left: auto; }
 .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 12px; }
-.header h1 { font-family: var(--display); font-style: italic; font-size: clamp(32px,7vw,52px); line-height: 1.05; }
+.header h1 { font-family: var(--display); font-style: italic; font-size: clamp(28px,7vw,44px); line-height: 1.05; }
 .header h1 span { color: var(--accent); font-style: normal; }
 :root[data-theme="ios"] .header h1 span { color: #ffd60a; }
 .subtitle { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
 
-/* ── THEME SWITCH ── */
-/* Single row: in wider (non-cyber) fonts the controls used to wrap the World
-   button onto the line below — keep them on one line and scroll if it ever
-   overflows a very narrow screen. */
-.theme-bar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-top: 18px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-.theme-bar::-webkit-scrollbar { display: none; }
 .mode-tag {
   font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--accent2); border: 1px solid var(--border); padding: 6px 10px; border-radius: 99px;
@@ -131,13 +126,13 @@ body::before {
 /* ── CARD ── */
 .card {
   background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 22px; animation: fadeUp 0.5s ease both; margin-bottom: 16px;
+  padding: 18px; animation: fadeUp 0.5s ease both; margin-bottom: 14px;
   backdrop-filter: blur(var(--card-blur)); -webkit-backdrop-filter: blur(var(--card-blur));
   transition: background 0.4s ease, border-color 0.4s ease;
 }
 /* flow-root so floated buttons (Rain/UV) stay inside the title instead of
    overlapping the content below it */
-.card-title { display: flow-root; font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 16px; line-height: 22px; }
+.card-title { display: flow-root; font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px; line-height: 22px; }
 .card-title.accent  { color: var(--accent); }
 .card-title.accent2 { color: var(--accent2); }
 .card-title.accent3 { color: var(--accent3); }
@@ -146,7 +141,7 @@ body::before {
 /* ── SEARCH ── */
 /* High z-index so the suggestions sit above the weather cards (which the
    global `* { z-index:1 }` rule would otherwise paint on top of, eating taps). */
-.search-wrap { display: flex; gap: 10px; margin-bottom: 16px; z-index: 1000; }
+.search-wrap { display: flex; gap: 10px; margin-bottom: 12px; z-index: 1000; }
 .search-input-wrap { flex: 1; position: relative; z-index: 1000; }
 .search-input-wrap input {
   width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
@@ -189,23 +184,23 @@ body::before {
 .notice strong { color: var(--accent); }
 
 /* ── TODAY HERO ── */
-.today-main { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
-.today-icon { font-size: clamp(3rem,10vw,4.5rem); line-height: 1; }
-.today-temp { font-family: var(--display); font-style: italic; font-size: clamp(2.8rem,10vw,4.2rem); line-height: 1; color: var(--accent); }
+.today-main { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+.today-icon { font-size: clamp(2.6rem,9vw,4.5rem); line-height: 1; }
+.today-temp { font-family: var(--display); font-style: italic; font-size: clamp(2.3rem,9vw,4.2rem); line-height: 1; color: var(--accent); }
 .today-feelslabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 2px; }
-.today-actual { font-size: 13px; color: var(--muted); margin-top: 5px; }
+.today-actual { font-size: 13px; color: var(--muted); margin-top: 2px; }
 .today-actual b { color: var(--text); font-weight: 600; }
-.today-desc { font-size: 12px; color: var(--muted); margin-top: 4px; text-transform: capitalize; }
-.today-range { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.today-desc { font-size: 12px; color: var(--muted); margin-top: 2px; text-transform: capitalize; }
+.today-range { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .today-range b { color: var(--text); font-weight: 500; }
-.today-local { font-size: 11px; color: var(--accent3); margin-top: 5px; letter-spacing: 0.04em; }
-.today-wear { margin-top: 12px; }
-.today-wear-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
-.today-chart { margin-top: 12px; cursor: default; }
+.today-local { font-size: 11px; color: var(--accent3); margin-top: 3px; letter-spacing: 0.04em; }
+.today-wear { margin-top: 8px; }
+.today-wear-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 6px; }
+.today-chart { margin-top: 8px; cursor: default; }
 /* Compact 2-column grid for the Today card's daily readouts (keeps the card
    short; the feels-like headline + chart stay full-size). */
 .today-stats { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
-.today-stats .stat-row { padding: 5px 0; font-size: 11.5px; }
+.today-stats .stat-row { padding: 4px 0; font-size: 11.5px; }
 .today-stats .stat-row:nth-last-child(-n+2) { border-bottom: none; }
 
 /* STAT ROWS */
@@ -284,7 +279,7 @@ body::before {
 .dd-tip b { color: var(--text); font-weight: 600; }
 .dd-tip .t-feels { color: var(--accent2); }
 .dd-tip .t-rain { color: var(--accent3); }
-.dd-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10px; color: var(--muted); margin-top: 6px; }
+.dd-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 9px; color: var(--muted); margin-top: 4px; }
 .dd-legend i { display: inline-block; width: 11px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
 
 /* HISTORICAL + MONTH controls */
@@ -342,8 +337,8 @@ td.rain-c { color: var(--accent3); }
 .tappable { cursor: pointer; transition: border-color 0.2s, transform 0.1s; }
 .tappable:hover { border-color: var(--accent); }
 .tappable:active { transform: scale(0.995); }
-.tap-hint { display: none; font-size: 9px; color: var(--accent); letter-spacing: 0.06em; margin-left: 8px; text-transform: uppercase; border: 1px solid var(--accent); background: rgba(var(--accent-rgb),0.12); border-radius: 99px; padding: 3px 10px; vertical-align: middle; }
-.tappable .tap-hint { display: inline-block; }   /* only show the cue on cards that are actually pressable */
+.tap-hint { display: none; font-size: 9px; color: var(--accent); letter-spacing: 0.06em; margin-left: 8px; text-transform: uppercase; border: 1px solid var(--accent); background: rgba(var(--accent-rgb),0.12); border-radius: 99px; padding: 3px 10px; vertical-align: middle; white-space: nowrap; }
+.tappable .tap-hint { display: inline-block; float: right; }   /* only show the cue on cards that are actually pressable */
 .mini-btn { float: right; min-width: 58px; height: 22px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 4px; margin-left: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--accent3); font-family: var(--font); font-size: 10px; line-height: 1; letter-spacing: 0.04em; padding: 0 10px; border-radius: 99px; cursor: pointer; text-transform: none; -webkit-tap-highlight-color: transparent; }
 .mini-btn:active { opacity: 0.8; }
 
@@ -383,10 +378,10 @@ td.rain-c { color: var(--accent3); }
 #euMapEl.zoomed .pin-name { display: block; }
 
 /* ── WHAT TO WEAR ── */
-.wear-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wear-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .wear-note { flex-basis: 100%; width: 100%; font-size: 12px; color: var(--muted); margin-bottom: 2px; line-height: 1.5; }
 .wear-note b { color: var(--accent); }
-.wear-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 7px; }
+.wear-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 6px 12px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .wear-chip .wc-emoji { font-size: 16px; }
 
 /* ── MONTH OVERVIEW (calendar) ── */
@@ -436,8 +431,6 @@ td.rain-c { color: var(--accent3); }
   <div class="title-row">
     <h1>Sky<span>Cast</span></h1>
     <span class="mode-tag" id="modeTag">◉ Live</span>
-  </div>
-  <div class="theme-bar">
     <button class="globe-btn" id="globeBtn" type="button" title="World cities map" aria-label="World cities map" aria-pressed="false">🌍 <span>World</span></button>
   </div>
 </div>
@@ -785,7 +778,7 @@ function dayChart(hourly, dateStr){
   const isday=idx.map(k=>hourly.is_day[k]);
   const hrs=idx.map(k=>+hourly.time[k].slice(11,13));
   const haveFeels=feels.some(v=>v!=null);
-  const W=360,H=216,L=30,R=14,plotTop=52,plotBot=H-26;
+  const W=360,H=192,L=30,R=14,plotTop=46,plotBot=H-24;
   const allT=temp.concat(haveFeels?feels.filter(v=>v!=null):[]);
   let tMin=Math.floor(Math.min(...allT)-1), tMax=Math.ceil(Math.max(...allT)+1); if(tMin===tMax)tMax++;
   const x=i=> L+(W-L-R)*(n<=1?0.5:i/(n-1));
@@ -1483,7 +1476,7 @@ function renderWeather(d) {
   document.getElementById('weatherContent').classList.remove('hidden');
 
   const date0 = new Date(d.daily.time[0]+'T12:00:00');
-  document.getElementById('todayTitle').textContent = 'Today — ' + date0.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' · ' + d._label;
+  document.getElementById('todayTitle').textContent = date0.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' · ' + (d._label||'').split(',')[0];
 
   const cur = d.current;
   const day0 = {hi:d.daily.temperature_2m_max[0],lo:d.daily.temperature_2m_min[0],rain:d.daily.precipitation_probability_max[0],wind:d.daily.wind_speed_10m_max[0],uv:d.daily.uv_index_max[0]};
