@@ -27,10 +27,10 @@
 :root { --font: 'DM Mono', monospace; }   /* default UI font (overridden per theme) */
 
 :root[data-theme="ios"] {
-  --bg:#3f6ea6; --surface:rgba(255,255,255,0.14); --card:rgba(255,255,255,0.13); --border:rgba(255,255,255,0.22);
-  --accent:#ffffff; --accent2:#ffd60a; --accent3:#aee8ff;
-  --text:#ffffff; --muted:rgba(255,255,255,0.66); --bull:#b7f5c1; --bear:#ffb3b8;
-  --accent-rgb:255,255,255; --accent3-rgb:174,232,255;
+  --bg:#2b3f77; --surface:rgba(255,255,255,0.10); --card:rgba(28,34,72,0.40); --border:rgba(255,255,255,0.16);
+  --accent:#ffffff; --accent2:#ffd60a; --accent3:#64d2ff;
+  --text:#ffffff; --muted:rgba(255,255,255,0.64); --bull:#b7f5c1; --bear:#ffb3b8;
+  --accent-rgb:255,255,255; --accent3-rgb:100,210,255;
   --radius:18px; --card-blur:24px;
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -67,17 +67,37 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-/* ── iOS theme ── iPhone-Weather look: weather-tinted sky (via data-live),
-   frosted cards, subtle scrim for readability. */
-:root[data-theme="ios"] body { background: linear-gradient(180deg,#2f7fd4 0%,#5ba3e0 55%,#a3cdf0 100%); transition: background 1s ease; }
-:root[data-theme="ios"][data-live="clear-day"]   body { background: linear-gradient(180deg,#2f7fd4 0%,#5ba3e0 55%,#a3cdf0 100%); }
-:root[data-theme="ios"][data-live="clear-night"] body { background: linear-gradient(180deg,#0b1024 0%,#1c2547 60%,#2c3a66 100%); }
-:root[data-theme="ios"][data-live="clouds"]      body { background: linear-gradient(180deg,#5b6a80 0%,#8fa0b3 100%); }
-:root[data-theme="ios"][data-live="rain"]        body { background: linear-gradient(180deg,#39495b 0%,#5d6e80 100%); }
-:root[data-theme="ios"][data-live="storm"]       body { background: linear-gradient(180deg,#202633 0%,#3d4657 100%); }
-:root[data-theme="ios"][data-live="snow"]        body { background: linear-gradient(180deg,#8394a8 0%,#c3cfdc 100%); }
-:root[data-theme="ios"][data-live="fog"]         body { background: linear-gradient(180deg,#7d858e 0%,#a8aeb5 100%); }
-:root[data-theme="ios"] body::before { background: linear-gradient(180deg, rgba(0,5,25,0.04) 0%, rgba(0,8,30,0.30) 100%); }
+/* ── iOS theme ── iPhone-Weather look: saturated weather-tinted sky (via
+   data-live), indigo frosted cards, subtle scrim for readability. */
+:root[data-theme="ios"] body { background: linear-gradient(180deg,#1c74e0 0%,#4aa0ec 55%,#9ed2f7 100%); transition: background 1s ease; }
+:root[data-theme="ios"][data-live="clear-day"]   body { background: linear-gradient(180deg,#1c74e0 0%,#4aa0ec 55%,#9ed2f7 100%); }
+:root[data-theme="ios"][data-live="clear-night"] body { background: linear-gradient(180deg,#111433 0%,#26295b 55%,#43407a 100%); }
+:root[data-theme="ios"][data-live="clouds"]      body { background: linear-gradient(180deg,#48597e 0%,#7d8fae 100%); }
+:root[data-theme="ios"][data-live="rain"]        body { background: linear-gradient(180deg,#2c3f60 0%,#546d8e 100%); }
+:root[data-theme="ios"][data-live="storm"]       body { background: linear-gradient(180deg,#191c38 0%,#39406a 100%); }
+:root[data-theme="ios"][data-live="snow"]        body { background: linear-gradient(180deg,#7b90b4 0%,#ccd8e8 100%); }
+:root[data-theme="ios"][data-live="fog"]         body { background: linear-gradient(180deg,#6d7890 0%,#a2aabc 100%); }
+:root[data-theme="ios"] body::before { background: linear-gradient(180deg, rgba(0,5,25,0.04) 0%, rgba(0,8,30,0.28) 100%); }
+/* Starfield at night (and behind storms), like the iPhone night sky */
+:root[data-theme="ios"][data-live="clear-night"] body::before,
+:root[data-theme="ios"][data-live="storm"] body::before {
+  background:
+    radial-gradient(1.2px 1.2px at 12% 16%, rgba(255,255,255,0.9), transparent 55%),
+    radial-gradient(1px 1px at 28% 8%,  rgba(255,255,255,0.7), transparent 55%),
+    radial-gradient(1.4px 1.4px at 43% 22%, rgba(255,255,255,0.8), transparent 55%),
+    radial-gradient(1px 1px at 61% 12%, rgba(255,255,255,0.6), transparent 55%),
+    radial-gradient(1.3px 1.3px at 76% 27%, rgba(255,255,255,0.85), transparent 55%),
+    radial-gradient(1px 1px at 89% 9%,  rgba(255,255,255,0.7), transparent 55%),
+    radial-gradient(1px 1px at 8% 38%,  rgba(255,255,255,0.55), transparent 55%),
+    radial-gradient(1.2px 1.2px at 34% 45%, rgba(255,255,255,0.65), transparent 55%),
+    radial-gradient(1px 1px at 55% 36%, rgba(255,255,255,0.5), transparent 55%),
+    radial-gradient(1.3px 1.3px at 71% 48%, rgba(255,255,255,0.7), transparent 55%),
+    radial-gradient(1px 1px at 93% 41%, rgba(255,255,255,0.6), transparent 55%),
+    radial-gradient(1px 1px at 21% 58%, rgba(255,255,255,0.45), transparent 55%),
+    radial-gradient(1.2px 1.2px at 48% 66%, rgba(255,255,255,0.5), transparent 55%),
+    radial-gradient(1px 1px at 82% 62%, rgba(255,255,255,0.45), transparent 55%),
+    linear-gradient(180deg, rgba(0,5,25,0.02) 0%, rgba(0,8,30,0.26) 100%);
+}
 :root[data-theme="ios"] .header h1 { font-style: normal; font-weight: 700; letter-spacing: -0.02em; }
 :root[data-theme="ios"] .today-temp { font-style: normal; font-weight: 200; letter-spacing: -0.03em; }
 :root[data-theme="ios"] .modal-bar h3 { font-style: normal; font-weight: 600; }
@@ -267,8 +287,9 @@ body::before {
 .wr-day { font-size: 12px; font-weight: 500; }
 .wr-day small { display: block; font-size: 10px; color: var(--muted); font-weight: 400; margin-top: 1px; }
 .wr-icon { font-size: 1.4rem; text-align: center; }
-.wr-bar-wrap { position: relative; height: 6px; background: var(--border); border-radius: 99px; }
-.wr-bar { position: absolute; height: 6px; background: linear-gradient(90deg, var(--accent3), var(--accent)); border-radius: 99px; box-shadow: 0 0 8px rgba(var(--accent-rgb),0.3); }
+.wr-bar-wrap { position: relative; height: 6px; background: rgba(0,0,0,0.28); border-radius: 99px; }
+.wr-bar { position: absolute; height: 6px; border-radius: 99px; }   /* per-row temp gradient set inline */
+.wr-now { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 9px; height: 9px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.35), 0 0 6px rgba(0,0,0,0.4); z-index: 2; }
 .wr-temps { font-size: 12px; text-align: right; white-space: nowrap; }
 .wr-temps .hi { font-weight: 500; color: var(--accent); }
 .wr-temps .lo { color: var(--muted); margin-left: 5px; }
@@ -515,42 +536,42 @@ td.rain-c { color: var(--accent3); }
       <div class="today-chart" id="todayChartHost" onclick="event.stopPropagation()"></div>
     </div>
 
-    <!-- WHAT TO WEAR -->
-    <div class="card" id="wearCard" style="animation-delay:0.07s">
-      <div class="card-title accent2">What to wear today</div>
-      <div id="wearBody" class="wear-chips"></div>
-    </div>
-
     <!-- HOURLY -->
-    <div class="card" style="animation-delay:0.1s">
+    <div class="card" style="animation-delay:0.08s">
       <div class="card-title accent3">Hourly — Next 24 hours <button type="button" class="mini-btn" onclick="openUvGraph()">☀️ UV</button><button type="button" class="mini-btn" onclick="openRainGraph()">💧 Rain</button></div>
       <div class="hourly-scroll" id="hourlyScroll"></div>
     </div>
 
+    <!-- FORECAST -->
+    <div class="card" style="animation-delay:0.11s">
+      <div class="card-title accent2">16-Day Forecast</div>
+      <div id="bestDay" class="best-day hidden"></div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:0.04em;">Tap any day for details · days past a week are long-range estimates and can be off.</p>
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+
+    <!-- WHAT TO WEAR -->
+    <div class="card" id="wearCard" style="animation-delay:0.14s">
+      <div class="card-title accent2">What to wear today</div>
+      <div id="wearBody" class="wear-chips"></div>
+    </div>
+
     <!-- STARGAZING TONIGHT -->
-    <div class="card" id="starCard" style="animation-delay:0.11s">
+    <div class="card" id="starCard" style="animation-delay:0.16s">
       <div class="card-title accent3">Stargazing Tonight</div>
       <div id="starBody"></div>
     </div>
 
     <!-- AIR QUALITY -->
-    <div class="card" id="airCard" style="animation-delay:0.12s" onclick="openAirModal()">
+    <div class="card" id="airCard" style="animation-delay:0.18s" onclick="openAirModal()">
       <div class="card-title accent3">Air Quality — Today <span class="tap-hint">tap for details ›</span></div>
       <div id="airBody"></div>
     </div>
 
     <!-- POLLEN -->
-    <div class="card" id="pollenCard" style="animation-delay:0.13s">
+    <div class="card" id="pollenCard" style="animation-delay:0.2s">
       <div class="card-title accent">Pollen — Today</div>
       <div id="pollenBody"></div>
-    </div>
-
-    <!-- FORECAST -->
-    <div class="card" style="animation-delay:0.15s">
-      <div class="card-title accent2">16-Day Forecast</div>
-      <div id="bestDay" class="best-day hidden"></div>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:0.04em;">Tap any day for details · days past a week are long-range estimates and can be off.</p>
-      <div class="week-grid" id="weekGrid"></div>
     </div>
 
     <!-- HISTORICAL (same date, previous years) -->
@@ -675,6 +696,24 @@ const F  = c => (c==null?'—':Math.round(c)+'°C');     // feels-like etc.
 const deg= d => (d==null?'—':Math.round(d)+'°');
 const COMPASS=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 const windDir = d => d==null ? '' : COMPASS[Math.round(d/22.5)%16];
+
+// iPhone-Weather-style temperature colors: icy blue → teal → green → yellow →
+// orange → red, interpolated between anchor temps. Used for the range bars.
+const TEMP_STOPS=[[-10,[110,160,245]],[0,[122,199,255]],[8,[90,208,201]],[14,[139,214,107]],[20,[245,207,74]],[26,[245,167,66]],[33,[242,100,80]]];
+function tempColor(t){
+  if (t==null) return 'rgb(160,170,190)';
+  const S=TEMP_STOPS;
+  if (t<=S[0][0]) return `rgb(${S[0][1]})`;
+  if (t>=S[S.length-1][0]) return `rgb(${S[S.length-1][1]})`;
+  for (let k=0;k<S.length-1;k++){
+    const [t0,c0]=S[k], [t1,c1]=S[k+1];
+    if (t>=t0 && t<=t1){
+      const f=(t-t0)/(t1-t0);
+      return 'rgb('+c0.map((v,j)=>Math.round(v+(c1[j]-v)*f)).join(',')+')';
+    }
+  }
+  return 'rgb(160,170,190)';
+}
 
 // Moon phase (not in most weather apps). Returns emoji + name.
 function moonPhase(date){
@@ -1627,9 +1666,16 @@ function renderWeather(d) {
     const wet=isWet(days.weather_code[i]);
     const ic=dayIcon(d.hourly, dateStr, days.weather_code[i], rainP);   // smarter sun/rain-aware icon
     const row=document.createElement('div'); row.className='week-row'+(i===bestIdx?' best':'')+(i>=7?' far':'');
+    // iPhone-style bar: gradient colored by the day's lo→hi temps; today's row
+    // gets a white dot marking the current temperature within the range.
+    let nowDot='';
+    if (i===0 && d.current && d.current.temperature_2m!=null){
+      const p=Math.max(+barL, Math.min(+barL + +barW, (d.current.temperature_2m-gMin)/range*100));
+      nowDot=`<span class="wr-now" style="left:${p.toFixed(1)}%"></span>`;
+    }
     row.innerHTML=`<div class="wr-day">${i===bestIdx?'⭐ ':''}${name}<small>${dlbl}</small></div>
       <div class="wr-icon">${ic.i}</div>
-      <div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%"></div></div>
+      <div class="wr-bar-wrap"><div class="wr-bar" style="left:${barL}%;width:${barW}%;background:linear-gradient(90deg,${tempColor(lo)},${tempColor(hi)})"></div>${nowDot}</div>
       <div class="wr-temps"><span class="hi">${T(hi)}</span><span class="lo">${T(lo)}</span></div>`;
     row.addEventListener('click',()=>openDayModal(i));   // open the centred day popup
     (i>=7 && farBox ? farBox : wkGrid).appendChild(row);
